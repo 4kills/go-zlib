@@ -1,8 +1,8 @@
-package native
+package main
 
 /*
-#cgo windows LDFLAGS: libs/zlib1.dll
-#cgo linux LDFLAGS: libs/libz.so.1.2.11
+#cgo CFLAGS: -I/zlib/
+#cgo LDFLAGS: libs/libz.a
 
 #include "zlib/zlib.h"
 #include <stdint.h>
@@ -99,3 +99,8 @@ signedint decompressData(longint ptr, longint inPtr, signedint inSize, longint o
 }
 */
 import "C"
+import "fmt"
+
+func main() {
+	fmt.Println("Memory Address: ", C.initDecompressor())
+}
