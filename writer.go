@@ -19,11 +19,13 @@ type Writer struct {
 }
 
 // NewWriter returns a new Writer with the underlying io.Writer to compress to.
+// w may be nil if you only plan on using WriteBytes.
 func NewWriter(w io.Writer) (*Writer, error) {
 	return NewWriterLevel(w, DefaultCompression)
 }
 
-// NewWriterLevel performs like NewWriter but you may also specify the compression level
+// NewWriterLevel performs like NewWriter but you may also specify the compression level.
+// w may be nil if you only plan on using WriteBytes.
 func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
 	if level != DefaultCompression && level != HuffmanOnly && (level < minCompression || level > maxCompression) {
 		return nil, errInvalidLevel
@@ -34,15 +36,30 @@ func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
 	return &Writer{w, level, c}, err
 }
 
-func (zw *Writer) Write(d []byte) (int, error) {
-	if len(d) == 0 {
+// WriteBytes takes uncompressed data p, compresses it and returns it as new byte slice.
+func (zw *Writer) WriteBytes(p []byte) ([]byte, error) {
+	if len(p) == 0 {
+		return nil, errNoInput
+	}
+	if err := checkClosed(zw.compressor); err != nil {
+		return nil, err
+	}
+
+	return zw.compressor.Compress(p)
+}
+
+// Write compresses the given data p and writes it to the underlying io.Writer.
+// It returns the number of *compressed* bytes written to the underlying io.Writer.
+// Please consider using WriteBytes as it might be more convenient for your use case.
+func (zw *Writer) Write(p []byte) (int, error) {
+	if len(p) == 0 {
 		return -1, errNoInput
 	}
 	if err := checkClosed(zw.compressor); err != nil {
 		return -1, err
 	}
 
-	out, err := zw.compressor.Compress(d)
+	out, err := zw.compressor.Compress(p)
 	if err != nil {
 		return 0, err
 	}
@@ -55,7 +72,7 @@ func (zw *Writer) Write(d []byte) (int, error) {
 		}
 		n += inc
 	}
-	return len(d), nil
+	return len(out), nil
 }
 
 // Close closes the writer by flushing any unwritten data to the underlying writer.
@@ -73,7 +90,7 @@ func (zw *Writer) Flush() error {
 	if err := checkClosed(zw.compressor); err != nil {
 		return err
 	}
-	// if write is successful there is no unwritten data
+	// if write is successful there is will be no unwritten data
 	return nil
 }
 
