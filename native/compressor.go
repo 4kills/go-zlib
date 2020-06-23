@@ -68,15 +68,18 @@ import (
 	"unsafe"
 )
 
-const minWritable = 8192
-
 // Compressor using an underlying C zlib stream to compress (deflate) data
 type Compressor struct {
 	ptr          int64
 	hasCompleted int
 	processed    int64
 	level        int
-	IsClosed     bool
+	isClosed     bool
+}
+
+// IsClosed returns whether the StreamCloser has closed the underlying stream
+func (c *Compressor) IsClosed() bool {
+	return c.isClosed
 }
 
 // NewCompressor returns and initializes a new Compressor with zlib compression stream initialized
@@ -92,11 +95,7 @@ func NewCompressor(lvl int) (*Compressor, error) {
 
 // Close closes the underlying zlib stream and frees the allocated memory
 func (c *Compressor) Close() error {
-	if c.IsClosed {
-		return errIsClosed
-	}
-
-	c.IsClosed = true
+	c.isClosed = true
 	_, err := C.closeCompressor(C.longlong(c.ptr))
 	if err != nil {
 		C.clearError()
@@ -107,10 +106,6 @@ func (c *Compressor) Close() error {
 
 // Compress compresses the given data and returns it as byte slice
 func (c *Compressor) Compress(in []byte) ([]byte, error) {
-	if c.IsClosed {
-		return nil, errIsClosed
-	} // TODO: error if in has length 0
-
 	inMem := &in[0]
 	inIdx := 0
 
@@ -134,24 +129,14 @@ func (c *Compressor) Compress(in []byte) ([]byte, error) {
 		outIdx += int(compressed)
 	}
 
+	c.processed = 0
+	c.hasCompleted = 0
+
 	_, err := C.resetCompressor(C.longlong(c.ptr))
 	if err != nil {
 		C.clearError()
 		return buf.Bytes(), errReset
 	}
 
-	c.processed = 0
-	c.hasCompleted = 0
-
 	return buf.Bytes(), nil
-}
-
-func startMemAddress(b *bytes.Buffer) *byte {
-	if len(b.Bytes()) > 0 {
-		return &b.Bytes()[0]
-	}
-	b.WriteByte(0)
-	ptr := &b.Bytes()[0]
-	b.Reset()
-	return ptr
 }
