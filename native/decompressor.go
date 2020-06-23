@@ -29,7 +29,7 @@ void closeDecompressor(longint ptr) {
     if(ok != Z_OK) errno = 1;
 }
 
-signedint decompressData(longint ptr, longint inPtr, signedint inSize, longint outPtr, signedint outSize) {
+signedint decompressData(longint ptr, longint inPtr, longint inSize, longint outPtr, longint outSize) {
     z_stream* s = (z_stream*) ptr;
 
     prepare(s, inPtr, inSize, outPtr, outSize);
