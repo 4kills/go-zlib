@@ -13,13 +13,19 @@ type reader struct {
 }
 
 func (r *reader) Close() error {
+	if err := checkClosed(r.decompressor); err != nil {
+		return err
+	}
 
-	return nil
+	return r.decompressor.Close()
 }
 
 func (r *reader) Read(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, errNoInput
+	}
+	if err := checkClosed(r.decompressor); err != nil {
+		return 0, err
 	}
 
 	buf := new(bytes.Buffer)
@@ -28,18 +34,28 @@ func (r *reader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
-	// get compressed slice here and then wrap in buffer and io.Copy
-
+	out, err := r.decompressor.Decompress(buf.Bytes())
+	if len(out) <= len(p) {
+		p = out
+		return len(out), err
+	}
+	p = out[:len(p)]
 	return len(p), nil
 }
 
-func (zr *reader) Reset(r io.Reader) {
-	zr.r = r
+// Reset resets the Reader to the state of being initialized with zlib.NewX(..),
+// but with the new underlying reader instead. It allows for reuse of the same reader.
+// This will panic if the writer has already been closed
+func (r *reader) Reset(reader io.Reader) {
+	if err := checkClosed(r.decompressor); err != nil {
+		panic(err)
+	}
+
+	r.r = reader
 }
 
 // NewReader returns a new reader, reading from r. It decompresses read data.
 func NewReader(r io.Reader) (io.ReadCloser, error) {
-	//c, err := native.NewDecompressor()
-	c := &native.Decompressor{} //dummy
-	return &reader{r, c}, nil
+	c, err := native.NewDecompressor()
+	return &reader{r, c}, err
 }
