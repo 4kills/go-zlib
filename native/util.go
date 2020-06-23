@@ -1,7 +1,5 @@
 package native
 
-import "bytes"
-
 const minWritable = 8192
 
 // StreamCloser can indicate whether their underlying stream is closed.
@@ -11,12 +9,25 @@ type StreamCloser interface {
 	IsClosed() bool
 }
 
-func startMemAddress(b *bytes.Buffer) *byte {
-	if len(b.Bytes()) > 0 {
-		return &b.Bytes()[0]
+func grow(b []byte, n int) []byte {
+	if cap(b)-len(b) >= n {
+		return b
 	}
-	b.WriteByte(0)
-	ptr := &b.Bytes()[0]
-	b.Reset()
+
+	new := make([]byte, len(b), len(b)+n)
+
+	for i := 0; i < len(b); i++ {
+		new[i] = (b)[i]
+	}
+	return new
+}
+
+func startMemAddress(b []byte) *byte {
+	if len(b) > 0 {
+		return &b[0]
+	}
+	b = append(b, 0)
+	ptr := &b[0]
+	b = b[0:0]
 	return ptr
 }

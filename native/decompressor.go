@@ -2,7 +2,7 @@ package native
 
 /*
 #cgo CFLAGS: -I/zlib/
-#cgo LDFLAGS: libs/libz.a
+#cgo LDFLAGS: ${SRCDIR}/libs/libz.a
 
 #include "util.h"
 #include <stdlib.h>
@@ -63,7 +63,6 @@ signedint decompressData(longint ptr, longint inPtr, longint inSize, longint out
 */
 import "C"
 import (
-	"bytes"
 	"unsafe"
 )
 
@@ -107,17 +106,20 @@ func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
 	inMem := &in[0]
 	inIdx := 0
 
-	var buf bytes.Buffer
 	outIdx := 0
 
-	for c.hasCompleted == 0 && len(in)-inIdx > 0 {
-		buf.Grow(minWritable)
+	buf := make([]byte, len(in)*7)
 
-		outMem := startMemAddress(&buf)
+	for c.hasCompleted == 0 && len(in)-inIdx > 0 {
+		buf = grow(buf, minWritable)
+
+		outMem := startMemAddress(buf)
 
 		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
 		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
-		compressed, err := C.decompressData(C.longlong(c.ptr), C.longlong(readMem), C.longlong(len(in)-inIdx), C.longlong(writeMem), C.longlong(buf.Cap()-outIdx), (*C.int)(unsafe.Pointer(&c.hasCompleted)), (*C.longlong)(unsafe.Pointer(&c.processed)))
+
+		compressed, err := C.decompressData(C.longlong(c.ptr), C.longlong(readMem), C.longlong(len(in)-inIdx), C.longlong(writeMem), C.longlong(cap(buf)-outIdx), (*C.int)(unsafe.Pointer(&c.hasCompleted)), (*C.longlong)(unsafe.Pointer(&c.processed)))
+
 		if err != nil {
 			C.clearError()
 			return nil, errProcess
@@ -125,6 +127,7 @@ func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
 
 		inIdx += int(c.processed)
 		outIdx += int(compressed)
+		buf = buf[:outIdx]
 	}
 
 	c.processed = 0
@@ -133,8 +136,8 @@ func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
 	_, err := C.resetDecompressor(C.longlong(c.ptr))
 	if err != nil {
 		C.clearError()
-		return buf.Bytes(), errReset
+		return buf, errReset
 	}
 
-	return buf.Bytes(), nil
+	return buf, nil
 }

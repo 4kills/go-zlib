@@ -7,12 +7,12 @@ import (
 	"github.com/4kills/zlib/native"
 )
 
-type reader struct {
+type Reader struct {
 	r            io.Reader
 	decompressor *native.Decompressor
 }
 
-func (r *reader) Close() error {
+func (r *Reader) Close() error {
 	if err := checkClosed(r.decompressor); err != nil {
 		return err
 	}
@@ -20,7 +20,18 @@ func (r *reader) Close() error {
 	return r.decompressor.Close()
 }
 
-func (r *reader) Read(p []byte) (int, error) {
+func (r *Reader) ReadBytes(compressed []byte) ([]byte, error) {
+	if len(compressed) == 0 {
+		return nil, errNoInput
+	}
+	if err := checkClosed(r.decompressor); err != nil {
+		return nil, err
+	}
+
+	return r.decompressor.Decompress(compressed)
+}
+
+func (r *Reader) Read(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, errNoInput
 	}
@@ -30,23 +41,28 @@ func (r *reader) Read(p []byte) (int, error) {
 
 	buf := new(bytes.Buffer)
 	buf.Grow(len(p))
-	if _, err := io.Copy(buf, r); err != nil {
+	if _, err := io.Copy(buf, r.r); err != nil {
 		return 0, err
 	}
 
 	out, err := r.decompressor.Decompress(buf.Bytes())
-	if len(out) <= len(p) {
-		p = out
-		return len(out), err
+	if err != nil {
+		return 0, err
 	}
-	p = out[:len(p)]
-	return len(p), nil
+
+	if len(out) <= len(p) {
+		copy(p, out)
+		return len(out), io.EOF
+	}
+
+	copy(p, out[:len(p)])
+	return len(p), io.EOF
 }
 
 // Reset resets the Reader to the state of being initialized with zlib.NewX(..),
 // but with the new underlying reader instead. It allows for reuse of the same reader.
 // This will panic if the writer has already been closed
-func (r *reader) Reset(reader io.Reader) {
+func (r *Reader) Reset(reader io.Reader) {
 	if err := checkClosed(r.decompressor); err != nil {
 		panic(err)
 	}
@@ -55,7 +71,7 @@ func (r *reader) Reset(reader io.Reader) {
 }
 
 // NewReader returns a new reader, reading from r. It decompresses read data.
-func NewReader(r io.Reader) (io.ReadCloser, error) {
+func NewReader(r io.Reader) (*Reader, error) {
 	c, err := native.NewDecompressor()
-	return &reader{r, c}, err
+	return &Reader{r, c}, err
 }
