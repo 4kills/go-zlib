@@ -20,6 +20,15 @@ longint initCompressor(signedint level) {
     return (longint) s;
 }
 
+void resetCompressor(longint ptr) {
+    z_stream* s = (z_stream*) ptr;
+    int ok = deflateReset(s);
+
+    if (ok != Z_OK) {
+        errno = 1;
+    }
+}
+
 void closeCompressor(longint ptr) {
     z_stream* s = (z_stream*) ptr;
     int ok = deflateEnd(s);
@@ -29,7 +38,7 @@ void closeCompressor(longint ptr) {
     if(ok != Z_OK) errno = 1;
 }
 
-signedint compressData(longint ptr, longint inPtr, signedint inSize, longint outPtr, signedint outSize, signedint* hasCompleted, signedint* processed) {
+signedint compressData(longint ptr, longint inPtr, longint inSize, longint outPtr, longint outSize, signedint* hasCompleted, longint* processed) {
     z_stream* s = (z_stream*) ptr;
 
     prepare(s, inPtr, inSize, outPtr, outSize);
@@ -53,14 +62,96 @@ signedint compressData(longint ptr, longint inPtr, signedint inSize, longint out
 }
 */
 import "C"
+import (
+	"bytes"
+	"fmt"
+	"unsafe"
+)
+
+const minWritable = 8192
 
 // Compressor using an underlying C zlib stream to compress (deflate) data
 type Compressor struct {
 	ptr          int64
-	hasCompleted *int
-	processed    *int
+	hasCompleted int
+	processed    int64
+	level        int
+	IsClosed     bool
 }
 
-func (c *Compressor) Write(b []byte) (int, error) {
-	return 0, nil
+// NewCompressor returns and initializes a new Compressor with zlib compression stream initialized
+func NewCompressor(lvl int) (*Compressor, error) {
+	ptr, err := C.initCompressor(C.int(lvl))
+	if err != nil {
+		C.clearError()
+		return nil, fmt.Errorf(errInitialize.Error(), ": compression level might be invalid")
+	}
+
+	return &Compressor{int64(ptr), 0, 0, lvl, false}, nil
+}
+
+// Close closes the underlying zlib stream and frees the allocated memory
+func (c *Compressor) Close() error {
+	if c.IsClosed {
+		return errIsClosed
+	}
+
+	c.IsClosed = true
+	_, err := C.closeCompressor(C.longlong(c.ptr))
+	if err != nil {
+		C.clearError()
+		return errClose
+	}
+	return nil
+}
+
+// Compress compresses the given data and returns it as byte slice
+func (c *Compressor) Compress(in []byte) ([]byte, error) {
+	if c.IsClosed {
+		return nil, errIsClosed
+	} // TODO: error if in has length 0
+
+	inMem := &in[0]
+	inIdx := 0
+
+	var buf bytes.Buffer
+	outIdx := 0
+
+	for c.hasCompleted == 0 {
+		buf.Grow(minWritable)
+
+		outMem := startMemAddress(&buf)
+
+		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
+		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
+		compressed, err := C.compressData(C.longlong(c.ptr), C.longlong(readMem), C.longlong(len(in)-inIdx), C.longlong(writeMem), C.longlong(buf.Cap()-outIdx), (*C.int)(unsafe.Pointer(&c.hasCompleted)), (*C.longlong)(unsafe.Pointer(&c.processed)))
+		if err != nil {
+			C.clearError()
+			return nil, errProcess
+		}
+
+		inIdx += int(c.processed)
+		outIdx += int(compressed)
+	}
+
+	_, err := C.resetCompressor(C.longlong(c.ptr))
+	if err != nil {
+		C.clearError()
+		return buf.Bytes(), errReset
+	}
+
+	c.processed = 0
+	c.hasCompleted = 0
+
+	return buf.Bytes(), nil
+}
+
+func startMemAddress(b *bytes.Buffer) *byte {
+	if len(b.Bytes()) > 0 {
+		return &b.Bytes()[0]
+	}
+	b.WriteByte(0)
+	ptr := &b.Bytes()[0]
+	b.Reset()
+	return ptr
 }
