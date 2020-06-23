@@ -108,7 +108,7 @@ func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
 
 	outIdx := 0
 
-	buf := make([]byte, len(in)*7)
+	buf := make([]byte, len(in)*assumedCompressionFactor)
 
 	for c.hasCompleted == 0 && len(in)-inIdx > 0 {
 		buf = grow(buf, minWritable)
@@ -118,7 +118,15 @@ func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
 		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
 		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
 
-		compressed, err := C.decompressData(C.longlong(c.ptr), C.longlong(readMem), C.longlong(len(in)-inIdx), C.longlong(writeMem), C.longlong(cap(buf)-outIdx), (*C.int)(unsafe.Pointer(&c.hasCompleted)), (*C.longlong)(unsafe.Pointer(&c.processed)))
+		compressed, err := C.decompressData(
+			C.longlong(c.ptr),
+			C.longlong(readMem),
+			C.longlong(len(in)-inIdx),
+			C.longlong(writeMem),
+			C.longlong(cap(buf)-outIdx),
+			(*C.int)(unsafe.Pointer(&c.hasCompleted)),
+			(*C.longlong)(unsafe.Pointer(&c.processed)),
+		)
 
 		if err != nil {
 			C.clearError()

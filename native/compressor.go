@@ -110,7 +110,7 @@ func (c *Compressor) Compress(in []byte) ([]byte, error) {
 
 	outIdx := 0
 
-	buf := make([]byte, 0, len(in)/7)
+	buf := make([]byte, 0, len(in)/assumedCompressionFactor)
 
 	for c.hasCompleted == 0 {
 		buf = grow(buf, minWritable)
