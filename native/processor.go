@@ -28,11 +28,12 @@ type processor struct {
 	s            *C.z_stream
 	hasCompleted bool
 	processed    int
+	readable     int
 	isClosed     bool
 }
 
 func newProcessor() processor {
-	return processor{C.newStream(), false, 0, false}
+	return processor{C.newStream(), false, 0, 0, false}
 }
 
 func (p *processor) prepare(inPtr uintptr, inSize int, outPtr uintptr, outSize int) {
@@ -62,6 +63,7 @@ func (p *processor) compressed(outSize int) int {
 func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) ([]byte, error) {
 	inMem := &in[0]
 	inIdx := 0
+	p.readable = len(in) - inIdx
 
 	outIdx := 0
 
@@ -72,6 +74,7 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 
 		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
 		readLen := len(in) - inIdx
+		p.readable = readLen
 		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
 		writeLen := cap(buf) - outIdx
 
