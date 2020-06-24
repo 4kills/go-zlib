@@ -60,7 +60,7 @@ signedint decompressData(longint ptr, longint inPtr, longint inSize, longint out
 
     return outSize - s->avail_out;
 }
-*/
+
 import "C"
 import (
 	"unsafe"
@@ -148,4 +148,4 @@ func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
 	}
 
 	return buf, nil
-}
+}*/

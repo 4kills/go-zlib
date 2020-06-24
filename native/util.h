@@ -13,7 +13,7 @@ static inline void clearError() {
     errno = 0; 
 }
 
-static inline void prepare(z_stream* s,  longint inPtr, signedint inSize, longint outPtr, signedint outSize) {
+static inline void prepare(z_stream* s,  longint inPtr, longint inSize, longint outPtr, longint outSize) {
     s->avail_in = inSize;
     s->next_in = (byte*) inPtr;
 
