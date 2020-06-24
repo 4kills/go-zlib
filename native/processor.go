@@ -8,6 +8,10 @@ z_stream* newStream() {
 	return (z_stream*) calloc(1, sizeof(z_stream));
 }
 
+void freeMem(z_stream* s) {
+	free(s);
+}
+
 longint getProcessed(z_stream* s, longint inSize) {
 	return inSize - s->avail_in;
 }
@@ -38,6 +42,12 @@ func (p *processor) prepare(inPtr uintptr, inSize int, outPtr uintptr, outSize i
 		C.longlong(outPtr),
 		C.longlong(outSize),
 	)
+}
+
+func (p *processor) close() {
+	C.freeMem(p.s)
+	p.s = nil
+	p.isClosed = true
 }
 
 func (p *processor) updateProcessed(inSize int) {

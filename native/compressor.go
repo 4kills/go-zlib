@@ -8,7 +8,7 @@ package native
 #include "util.h"
 #include <stdlib.h>
 
-// I have no idea why I have to wrap this function but otherwise cgo won't compile
+// I have no idea why I have to wrap just this function but otherwise cgo won't compile
 int defInit(z_stream* s, int lvl) {
 	return deflateInit(s, lvl);
 }
@@ -44,11 +44,9 @@ func NewCompressor(lvl int) (*Compressor, error) {
 
 // Close closes the underlying zlib stream and frees the allocated memory
 func (c *Compressor) Close() error {
-	c.p.isClosed = true
-
 	ok := C.deflateEnd(c.p.s)
 
-	C.free(unsafe.Pointer(c.p.s))
+	c.p.close()
 
 	if ok != C.Z_OK {
 		return errClose
