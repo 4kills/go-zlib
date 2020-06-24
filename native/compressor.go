@@ -16,7 +16,6 @@ int defInit(z_stream* s, int lvl) {
 import "C"
 import (
 	"fmt"
-	"unsafe"
 )
 
 // Compressor using an underlying C zlib stream to compress (deflate) data
@@ -56,51 +55,23 @@ func (c *Compressor) Close() error {
 
 // Compress compresses the given data and returns it as byte slice
 func (c *Compressor) Compress(in []byte) ([]byte, error) {
-	inMem := &in[0]
-	inIdx := 0
-
-	outIdx := 0
-
-	buf := make([]byte, 0, len(in)/assumedCompressionFactor)
-
-	for !c.p.hasCompleted {
-		buf = grow(buf, minWritable)
-
-		outMem := startMemAddress(buf)
-
-		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
-		readLen := len(in) - inIdx
-		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
-		writeLen := cap(buf) - outIdx
-
-		c.p.prepare(readMem, readLen, writeMem, writeLen)
-
-		ok := C.deflate(c.p.s, C.Z_FINISH)
-		switch ok {
-		case C.Z_STREAM_END:
-			c.p.hasCompleted = true
-			break
-		case C.Z_OK:
-			break
-		default:
-			return nil, errProcess
-		}
-
-		c.p.updateProcessed(readLen)
-		compressed := c.p.compressed(writeLen)
-
-		inIdx += c.p.processed
-		outIdx += int(compressed)
-		buf = buf[:outIdx]
+	condition := func() bool {
+		return !c.p.hasCompleted
 	}
 
-	c.p.processed = 0
-	c.p.hasCompleted = false
-
-	ok := C.deflateReset(c.p.s)
-	if ok != C.Z_OK {
-		return buf, errReset
+	zlibProcess := func() C.int {
+		return C.deflate(c.p.s, C.Z_FINISH)
 	}
 
-	return buf, nil
+	specificReset := func() C.int {
+		return C.deflateReset(c.p.s)
+	}
+
+	return c.p.process(
+		in,
+		make([]byte, 0, len(in)/assumedCompressionFactor),
+		condition,
+		zlibProcess,
+		specificReset,
+	)
 }

@@ -22,6 +22,7 @@ longint getCompressed(z_stream* s, longint outSize) {
 
 */
 import "C"
+import "unsafe"
 
 type processor struct {
 	s            *C.z_stream
@@ -56,4 +57,52 @@ func (p *processor) updateProcessed(inSize int) {
 
 func (p *processor) compressed(outSize int) int {
 	return int(C.getCompressed(p.s, C.longlong(outSize)))
+}
+
+func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) ([]byte, error) {
+	inMem := &in[0]
+	inIdx := 0
+
+	outIdx := 0
+
+	for condition() {
+		buf = grow(buf, minWritable)
+
+		outMem := startMemAddress(buf)
+
+		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
+		readLen := len(in) - inIdx
+		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
+		writeLen := cap(buf) - outIdx
+
+		p.prepare(readMem, readLen, writeMem, writeLen)
+
+		ok := zlibProcess()
+		switch ok {
+		case C.Z_STREAM_END:
+			p.hasCompleted = true
+			break
+		case C.Z_OK:
+			break
+		default:
+			return nil, errProcess
+		}
+
+		p.updateProcessed(readLen)
+		compressed := p.compressed(writeLen)
+
+		inIdx += p.processed
+		outIdx += int(compressed)
+		buf = buf[:outIdx]
+	}
+
+	p.processed = 0
+	p.hasCompleted = false
+
+	ok := specificReset()
+	if ok != C.Z_OK {
+		return buf, errReset
+	}
+
+	return buf, nil
 }
