@@ -118,7 +118,7 @@ func TestWrite_ReadBytes_wShortString(t *testing.T) {
 	}
 	defer r.Close()
 
-	out, err := r.ReadBytes(b.Bytes())
+	_, out, err := r.ReadBytes(b.Bytes())
 	if err != nil {
 		t.Error(err)
 	}
@@ -144,7 +144,7 @@ func TestWriteBytes_ReadBytes_wShortString(t *testing.T) {
 	}
 	defer r.Close()
 
-	out, err := r.ReadBytes(b)
+	_, out, err := r.ReadBytes(b)
 	if err != nil {
 		t.Error(err)
 	}
@@ -183,9 +183,51 @@ func TestWrite_Read_Repeated(t *testing.T) {
 		o := make([]byte, len(rep)/repeatCount)
 		n, err := r.Read(o)
 		out.Write(o[:n])
-		if err != io.EOF && err != nil {
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
 			t.Error(err)
 		}
+	}
+
+	sliceEquals(t, rep, out.Bytes())
+}
+
+func TestWrite_ReadBytes_Repeated(t *testing.T) {
+	rep := make([]byte, 0, len(shortString)*repeatCount)
+	for i := 0; i < repeatCount; i++ {
+		rep = append(rep, shortString...)
+	}
+
+	var b bytes.Buffer
+	w, err := NewWriter(&b)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	for i := 0; i < repeatCount; i++ {
+		_, err = w.Write(shortString)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	r, err := NewReader(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
+	m := b.Len()
+	for i := 0; i < repeatCount; i++ {
+		_, decomp, err := r.ReadBytes(b.Next(m / repeatCount))
+		if err != nil {
+			t.Error(err)
+		}
+		out.Write(decomp)
 	}
 
 	sliceEquals(t, rep, out.Bytes())
