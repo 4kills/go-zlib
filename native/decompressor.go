@@ -51,9 +51,9 @@ signedint decompressData(longint ptr, longint inPtr, longint inSize, longint out
         break;
     case Z_OK:
         break;
-    default:
-        errno = 1;
-        return -1;
+	default:
+		errno = ok;
+        break;
     }
 
     *processed = inSize - s->avail_in;
@@ -102,13 +102,13 @@ func (c *Decompressor) Close() error {
 }
 
 // Decompress decompresses the given data and returns it as byte slice
-func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
+func (c *Decompressor) Decompress(in []byte) (int, []byte, error) {
 	inMem := &in[0]
 	inIdx := 0
 
 	outIdx := 0
 
-	buf := make([]byte, len(in)*assumedCompressionFactor)
+	buf := make([]byte, 0, len(in)*assumedCompressionFactor)
 
 	for c.hasCompleted == 0 && len(in)-inIdx > 0 {
 		buf = grow(buf, minWritable)
@@ -130,22 +130,22 @@ func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
 
 		if err != nil {
 			C.clearError()
-			return nil, errProcess
+			return int(c.processed), nil, errProcess
 		}
 
 		inIdx += int(c.processed)
 		outIdx += int(compressed)
 		buf = buf[:outIdx]
 	}
-
+	processed := int(c.processed)
 	c.processed = 0
 	c.hasCompleted = 0
 
 	_, err := C.resetDecompressor(C.longlong(c.ptr))
 	if err != nil {
 		C.clearError()
-		return buf, errReset
+		return processed, buf, errReset
 	}
 
-	return buf, nil
+	return processed, buf, nil
 }
