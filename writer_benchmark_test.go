@@ -5,39 +5,56 @@ import (
 	"compress/zlib"
 	"errors"
 	"testing"
+	"time"
 )
 
 // practical benchmarks
 
 func BenchmarkWriteBytesMcPacketsDefault(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
-	r, _ := NewWriter(nil)
+	compressedMcPackets := loadPackets("test/mc_packets/decompressed_mc_packets.json")
+	w, _ := NewWriter(nil)
 
-	for _, v := range compressedMcPackets {
-		r.WriteBytes(v)
+	for i := 0; i < b.N; i++ {
+		w.WriteBytes(compressedMcPackets[i%len(compressedMcPackets)])
 	}
 }
 
 func BenchmarkWriteMcPacketsDefault(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
+	compressedMcPackets := loadPackets("test/mc_packets/decompressed_mc_packets.json")
 
 	buf := bytes.Buffer{}
 	w, _ := NewWriter(&buf)
 
+	t := time.Now()
+
 	for _, v := range compressedMcPackets {
 		w.Write(v)
 	}
+	b.Log(time.Now().Sub(t))
+
+	/*
+		for i := 0; i < b.N; i++ {
+			w.Write(compressedMcPackets[i%len(compressedMcPackets)])
+		}*/
 }
 
 func BenchmarkWriteMcPacketsDefaultStd(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
+	compressedMcPackets := loadPackets("test/mc_packets/decompressed_mc_packets.json")
 
 	buf := bytes.Buffer{}
 	w := zlib.NewWriter(&buf)
 
+	//t := time.Now()
 	for _, v := range compressedMcPackets {
 		w.Write(v)
+		w.Flush()
 	}
+	//b.Log(time.Now().Sub(t))
+	b.Log(buf.Len())
+	/*
+		for i := 0; i < b.N; i++ {
+			w.Write(compressedMcPackets[i%len(compressedMcPackets)])
+		}*/
 }
 
 // laboratory condition benchmarks
