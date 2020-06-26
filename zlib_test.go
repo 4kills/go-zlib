@@ -233,6 +233,35 @@ func TestWrite_ReadBytes_Repeated(t *testing.T) {
 	sliceEquals(t, rep, out.Bytes())
 }
 
+func TestReaderReset(t *testing.T) {
+	// ASSUMES READ AND WRITE WORK PROPERLY
+	w, err := NewWriterLevel(nil, HuffmanOnly)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	b, err := w.WriteBytes(shortString)
+	if err != nil {
+		t.Error(err)
+	}
+
+	r, err := NewReader(bytes.NewReader(b))
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	out := make([]byte, len(shortString))
+	r.Read(out)
+	sliceEquals(t, shortString, out)
+
+	out = make([]byte, len(shortString))
+	r.Reset(bytes.NewBuffer(b))
+	r.Read(out)
+	sliceEquals(t, shortString, out)
+}
+
 func TestHuffmanOnly(t *testing.T) {
 	// ASSUMES READ AND WRITE WORK PROPERLY
 	w, err := NewWriterLevel(nil, HuffmanOnly)
