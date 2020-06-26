@@ -161,7 +161,7 @@ func benchmarkReadLevelStd(input []byte, level int, b *testing.B) {
 
 	n := 0
 	for i := 0; i < b.N; i++ {
-		n, _ := r.Read(decompressed)
+		n, _ = r.Read(decompressed)
 		buf.Write(compressed) // requires some time but only very little compared to the benchmarked method r.Read
 	}
 	read = n
