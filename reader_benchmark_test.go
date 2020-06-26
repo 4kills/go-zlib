@@ -3,8 +3,57 @@ package zlib
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/json"
+	"io/ioutil"
+	"os"
 	"testing"
 )
+
+// practical benchmarks
+
+func BenchmarkReadBytesMcPacketsDefault(b *testing.B) {
+	compressedMcPackets := loadPackets("/test/mc_packets/compressed_mc_packets.json")
+	r, _ := NewReader(nil)
+
+	for _, v := range compressedMcPackets {
+		r.ReadBytes(v)
+	}
+}
+
+func BenchmarkReadMcPacketsDefault(b *testing.B) {
+	compressedMcPackets := loadPackets("/test/mc_packets/compressed_mc_packets.json")
+
+	p := make([]byte, 300_000)
+	buf := bytes.Buffer{}
+	r, _ := NewReader(&buf)
+	for _, v := range compressedMcPackets {
+		buf.Write(v)
+		r.Read(p)
+	}
+}
+
+func BenchmarkReadMcPacketsDefaultStd(b *testing.B) {
+	compressedMcPackets := loadPackets("/test/mc_packets/compressed_mc_packets.json")
+
+	p := make([]byte, 300_000)
+	buf := bytes.Buffer{}
+	r, _ := zlib.NewReader(&buf)
+	for _, v := range compressedMcPackets {
+		buf.Write(v)
+		r.Read(p)
+	}
+}
+
+func loadPackets(loc string) [][]byte {
+	var b [][]byte
+	jsonFile, _ := os.Open(loc)
+	defer jsonFile.Close()
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(byteValue, b)
+	return b
+}
+
+// laboratory condition benchmarks
 
 func BenchmarkReadBytes64BBestCompression(b *testing.B) {
 	benchmarkReadBytesLevel(xByte(64), BestCompression, b)
