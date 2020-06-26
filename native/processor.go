@@ -73,7 +73,7 @@ func (p *processor) compressed(outSize int) int {
 	return int(C.getCompressed(p.s, C.longlong(outSize)))
 }
 
-func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) ([]byte, error) {
+func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) (int, []byte, error) {
 	inMem := &in[0]
 	inIdx := 0
 	p.readable = len(in) - inIdx
@@ -101,7 +101,7 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 		case C.Z_OK:
 			break
 		default:
-			return nil, errProcess
+			return p.processed, nil, errProcess
 		}
 
 		p.updateProcessed(readLen)
@@ -112,13 +112,14 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 		buf = buf[:outIdx]
 	}
 
+	processed := p.processed
 	p.processed = 0
 	p.hasCompleted = false
 
 	ok := specificReset()
 	if ok != C.Z_OK {
-		return buf, errReset
+		return processed, buf, errReset
 	}
 
-	return buf, nil
+	return processed, buf, nil
 }

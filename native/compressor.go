@@ -65,11 +65,12 @@ func (c *Compressor) Compress(in []byte) ([]byte, error) {
 		return C.deflateReset(c.p.s)
 	}
 
-	return c.p.process(
+	_, b, err := c.p.process(
 		in,
 		make([]byte, 0, len(in)/assumedCompressionFactor),
 		condition,
 		zlibProcess,
 		specificReset,
 	)
+	return b, err
 }

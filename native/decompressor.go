@@ -48,7 +48,7 @@ func (c *Decompressor) Close() error {
 }
 
 // Decompress decompresses the given data and returns it as byte slice
-func (c *Decompressor) Decompress(in []byte) ([]byte, error) {
+func (c *Decompressor) Decompress(in []byte) (int, []byte, error) {
 	condition := func() bool {
 		return !c.p.hasCompleted && c.p.readable > 0
 	}
