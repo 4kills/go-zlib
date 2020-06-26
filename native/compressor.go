@@ -31,9 +31,8 @@ func (c *Compressor) IsClosed() bool {
 func NewCompressor(lvl int) (*Compressor, error) {
 	p := newProcessor()
 
-	ok := C.defInit(p.s, C.int(lvl))
-	if ok != C.Z_OK {
-		return nil, fmt.Errorf(errInitialize.Error(), ": compression level might be invalid")
+	if ok := C.defInit(p.s, C.int(lvl)); ok != C.Z_OK {
+		return nil, determineError(fmt.Errorf("%s: %s", errInitialize.Error(), "compression level might be invalid"), ok)
 	}
 
 	return &Compressor{p, lvl}, nil
@@ -46,7 +45,7 @@ func (c *Compressor) Close() error {
 	c.p.close()
 
 	if ok != C.Z_OK {
-		return errClose
+		return determineError(errClose, ok)
 	}
 	return nil
 }

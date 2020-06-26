@@ -27,9 +27,8 @@ func (c *Decompressor) IsClosed() bool {
 func NewDecompressor() (*Decompressor, error) {
 	p := newProcessor()
 
-	ok := C.infInit(p.s)
-	if ok != C.Z_OK {
-		return nil, errInitialize
+	if ok := C.infInit(p.s); ok != C.Z_OK {
+		return nil, determineError(errInitialize, ok)
 	}
 
 	return &Decompressor{p}, nil
@@ -42,7 +41,7 @@ func (c *Decompressor) Close() error {
 	c.p.close()
 
 	if ok != C.Z_OK {
-		return errClose
+		return determineError(errClose, ok)
 	}
 	return nil
 }

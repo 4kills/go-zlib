@@ -97,11 +97,9 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 		switch ok {
 		case C.Z_STREAM_END:
 			p.hasCompleted = true
-			break
 		case C.Z_OK:
-			break
 		default:
-			return p.processed, nil, errProcess
+			return p.processed, nil, determineError(errProcess, ok)
 		}
 
 		p.updateProcessed(readLen)
@@ -116,9 +114,8 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 	p.processed = 0
 	p.hasCompleted = false
 
-	ok := specificReset()
-	if ok != C.Z_OK {
-		return processed, buf, errReset
+	if ok := specificReset(); ok != C.Z_OK {
+		return processed, buf, determineError(errReset, ok)
 	}
 
 	return processed, buf, nil
