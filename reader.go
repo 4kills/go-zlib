@@ -2,7 +2,6 @@ package zlib
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 
 	"github.com/4kills/zlib/native"
@@ -56,8 +55,6 @@ func (r *Reader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
-	fmt.Println(r.buffer.Len())
-
 	in := make([]byte, r.buffer.Len())
 	copy(in, r.buffer.Bytes())
 	processed, out, err := r.decompressor.Decompress(in)
@@ -65,8 +62,6 @@ func (r *Reader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 	r.buffer.Next(processed)
-
-	fmt.Println(r.buffer.Len())
 
 	if len(out) <= len(p) {
 		copy(p, out)
