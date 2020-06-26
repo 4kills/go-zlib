@@ -235,7 +235,7 @@ func TestWrite_ReadBytes_Repeated(t *testing.T) {
 
 func TestReaderReset(t *testing.T) {
 	// ASSUMES READ AND WRITE WORK PROPERLY
-	w, err := NewWriterLevel(nil, HuffmanOnly)
+	w, err := NewWriterLevel(nil, DefaultCompression)
 	if err != nil {
 		t.Error(err)
 	}
