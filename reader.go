@@ -2,7 +2,6 @@ package zlib
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 
 	"github.com/4kills/zlib/native"
@@ -28,7 +27,7 @@ func (r *Reader) Close() error {
 // ReadBytes takes compressed data p, decompresses it and returns it as new byte slice.
 // It also returns the number n of bytes that were processed from the compressed slice.
 // If n < len(compressed) and err == nil then only the first n compressed bytes were in
-// a suitable zlib format.
+// a suitable zlib format and as such decompressed.
 // This method is generally slightly faster than Read.
 func (r *Reader) ReadBytes(compressed []byte) (n int, decompressed []byte, err error) {
 	if len(compressed) == 0 {
@@ -56,8 +55,6 @@ func (r *Reader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
-	fmt.Println(r.buffer.Len())
-
 	in := make([]byte, r.buffer.Len())
 	copy(in, r.buffer.Bytes())
 	processed, out, err := r.decompressor.Decompress(in)
@@ -65,8 +62,6 @@ func (r *Reader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 	r.buffer.Next(processed)
-
-	fmt.Println(r.buffer.Len())
 
 	if len(out) <= len(p) {
 		copy(p, out)
