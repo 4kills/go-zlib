@@ -7,6 +7,41 @@ import (
 	"testing"
 )
 
+// practical benchmarks
+
+func BenchmarkWriteBytesMcPacketsDefault(b *testing.B) {
+	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
+	r, _ := NewWriter(nil)
+
+	for _, v := range compressedMcPackets {
+		r.WriteBytes(v)
+	}
+}
+
+func BenchmarkWriteMcPacketsDefault(b *testing.B) {
+	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
+
+	buf := bytes.Buffer{}
+	w, _ := NewWriter(&buf)
+
+	for _, v := range compressedMcPackets {
+		w.Write(v)
+	}
+}
+
+func BenchmarkWriteMcPacketsDefaultStd(b *testing.B) {
+	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
+
+	buf := bytes.Buffer{}
+	w := zlib.NewWriter(&buf)
+
+	for _, v := range compressedMcPackets {
+		w.Write(v)
+	}
+}
+
+// laboratory condition benchmarks
+
 func BenchmarkWriteBytes64BBestCompression(b *testing.B) {
 	benchmarkWriteBytesLevel(xByte(64), BestCompression, b)
 }
