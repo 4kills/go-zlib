@@ -145,7 +145,7 @@ func benchmarkWriteLevelStd(input []byte, level int, b *testing.B) {
 
 	n := 0
 	for i := 0; i < b.N; i++ {
-		n, _ := w.Write(input)
+		n, _ = w.Write(input)
 		w.Flush()
 		buf.Reset() //requires almost no time
 	}
