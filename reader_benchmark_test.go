@@ -145,6 +145,8 @@ func BenchmarkRead65536BDefaultStd(b *testing.B) {
 	benchmarkReadLevelStd(xByte(65536), DefaultCompression, b)
 }
 
+var read int
+
 func benchmarkReadLevelStd(input []byte, level int, b *testing.B) {
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
@@ -157,8 +159,10 @@ func benchmarkReadLevelStd(input []byte, level int, b *testing.B) {
 
 	decompressed := make([]byte, len(input))
 
+	n := 0
 	for i := 0; i < b.N; i++ {
-		r.Read(decompressed)
+		n, _ := r.Read(decompressed)
 		buf.Write(compressed) // requires some time but only very little compared to the benchmarked method r.Read
 	}
+	read = n
 }

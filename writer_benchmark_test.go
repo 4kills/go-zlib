@@ -135,17 +135,21 @@ func BenchmarkWrite65536BDefaultStd(b *testing.B) {
 	benchmarkWriteLevelStd(xByte(65536), DefaultCompression, b)
 }
 
+var wrote int
+
 // std library zlib in comparison
 func benchmarkWriteLevelStd(input []byte, level int, b *testing.B) {
 	buf := bytes.NewBuffer(make([]byte, 0, len(input)))
 	w, _ := zlib.NewWriterLevel(buf, level) // std library zlib
 	defer w.Close()
 
+	n := 0
 	for i := 0; i < b.N; i++ {
-		w.Write(input)
+		n, _ := w.Write(input)
 		w.Flush()
 		buf.Reset() //requires almost no time
 	}
+	wrote = n
 }
 
 func xByte(multOf16 int) []byte {
