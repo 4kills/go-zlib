@@ -1,5 +1,14 @@
 package native
 
+/*
+#cgo CFLAGS: -I/zlib/
+#cgo LDFLAGS: ${SRCDIR}/libs/libz.a
+
+#include "zlib/zlib.h"
+*/
+import "C"
+import "fmt"
+
 const minWritable = 8192
 const assumedCompressionFactor = 7
 
@@ -22,6 +31,34 @@ func grow(b []byte, n int) []byte {
 		new[i] = b[i]
 	}
 	return new
+}
+
+func determineError(parent error, errCode C.int) error {
+	var err error
+
+	switch errCode {
+	case C.Z_OK:
+		fallthrough
+	case C.Z_STREAM_END:
+		fallthrough
+	case C.Z_NEED_DICT:
+		return nil
+	case C.Z_STREAM_ERROR:
+		err = errStream
+	case C.Z_DATA_ERROR:
+		err = errData
+	case C.Z_MEM_ERROR:
+		err = errMem
+	case C.Z_VERSION_ERROR:
+		err = errMem
+	default:
+		err = errUnknown
+	}
+
+	if parent == nil {
+		return err
+	}
+	return fmt.Errorf("%s: %s", parent.Error(), err.Error())
 }
 
 func startMemAddress(b []byte) *byte {

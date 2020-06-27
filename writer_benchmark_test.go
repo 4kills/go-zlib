@@ -3,40 +3,62 @@ package zlib
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/json"
 	"errors"
+	"io"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
-// practical benchmarks
+// real world data benchmarks
 
-func BenchmarkWriteBytesMcPacketsDefault(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
-	r, _ := NewWriter(nil)
+const decompressedMcPacketsLoc = "test/mc_packets/decompressed_mc_packets.json"
 
-	for _, v := range compressedMcPackets {
-		r.WriteBytes(v)
+var decompressedMcPackets [][]byte
+
+func BenchmarkWriteBytesAllMcPacketsDefault(b *testing.B) {
+	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
+
+	benchmarkWriteBytesMcPacketsGeneric(decompressedMcPackets, b)
+}
+
+func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
+	w, _ := NewWriter(nil)
+	defer w.Close()
+
+	reportBytesPerChunk(input, b)
+
+	for i := 0; i < b.N; i++ {
+		for _, v := range input {
+			w.WriteBytes(v)
+		}
 	}
 }
 
-func BenchmarkWriteMcPacketsDefault(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
+func BenchmarkWriteAllMcPacketsDefault(b *testing.B) {
+	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
+	w, _ := NewWriter(&bytes.Buffer{})
 
-	buf := bytes.Buffer{}
-	w, _ := NewWriter(&buf)
-
-	for _, v := range compressedMcPackets {
-		w.Write(v)
-	}
+	benchmarkWriteMcPacketsGeneric(w, decompressedMcPackets, b)
 }
 
-func BenchmarkWriteMcPacketsDefaultStd(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/decompressed_mc_packets.json")
+func BenchmarkWriteAllMcPacketsDefaultStd(b *testing.B) {
+	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
+	w := zlib.NewWriter(&bytes.Buffer{})
 
-	buf := bytes.Buffer{}
-	w := zlib.NewWriter(&buf)
+	benchmarkWriteMcPacketsGeneric(w, decompressedMcPackets, b)
+}
 
-	for _, v := range compressedMcPackets {
-		w.Write(v)
+func benchmarkWriteMcPacketsGeneric(w TestWriter, input [][]byte, b *testing.B) {
+	reportBytesPerChunk(input, b)
+
+	defer w.Close()
+
+	for i := 0; i < b.N; i++ {
+		for _, v := range input {
+			w.Write(v)
+		}
 	}
 }
 
@@ -84,6 +106,10 @@ func benchmarkWriteBytesLevel(input []byte, level int, b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w.WriteBytes(input)
+
+		b.StopTimer()
+		w.Reset(nil) // to ensure there are no caching effects for the same packet over and over again
+		b.StartTimer()
 	}
 }
 
@@ -126,12 +152,8 @@ func BenchmarkWrite65536BDefault(b *testing.B) {
 func benchmarkWriteLevel(input []byte, level int, b *testing.B) {
 	buf := bytes.NewBuffer(make([]byte, 0, len(input)))
 	w, _ := NewWriterLevel(buf, level)
-	defer w.Close()
 
-	for i := 0; i < b.N; i++ {
-		w.Write(input)
-		buf.Reset() //requires almost no time
-	}
+	benchmarkWriteLevelGeneric(w, buf, input, b)
 }
 
 func BenchmarkWrite64BBestCompressionStd(b *testing.B) {
@@ -170,21 +192,58 @@ func BenchmarkWrite65536BDefaultStd(b *testing.B) {
 	benchmarkWriteLevelStd(xByte(65536), DefaultCompression, b)
 }
 
-var wrote int
-
 // std library zlib in comparison
 func benchmarkWriteLevelStd(input []byte, level int, b *testing.B) {
 	buf := bytes.NewBuffer(make([]byte, 0, len(input)))
-	w, _ := zlib.NewWriterLevel(buf, level) // std library zlib
+	w, _ := NewWriterLevel(buf, level)
+
+	benchmarkWriteLevelGeneric(w, buf, input, b)
+}
+
+func benchmarkWriteLevelGeneric(w TestWriter, buf *bytes.Buffer, input []byte, b *testing.B) {
 	defer w.Close()
 
-	n := 0
 	for i := 0; i < b.N; i++ {
-		n, _ = w.Write(input)
-		w.Flush()
-		buf.Reset() //requires almost no time
+		w.Write(input)
+
+		b.StopTimer()
+		w.Reset(buf) // to ensure there are no caching effects for the same packet over and over again
+		buf.Reset()
+		b.StartTimer()
 	}
-	wrote = n
+}
+
+// HELPER FUNCTIONS
+
+func reportBytesPerChunk(input [][]byte, b *testing.B) {
+	numOfBytes := 0
+	for _, v := range input {
+		numOfBytes += len(v)
+	}
+	b.ReportMetric(float64(numOfBytes), "bytes/chunk")
+}
+
+func loadPacketsIfNil(packets *[][]byte, loc string) {
+	if *packets != nil {
+		return
+	}
+	*packets = loadPackets(loc)
+}
+
+type TestWriter interface {
+	Write(p []byte) (int, error)
+	Close() error
+	Flush() error
+	Reset(w io.Writer)
+}
+
+func loadPackets(loc string) [][]byte {
+	var b [][]byte
+	jsonFile, _ := os.Open(loc)
+	defer jsonFile.Close()
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(byteValue, &b)
+	return b
 }
 
 func xByte(multOf16 int) []byte {

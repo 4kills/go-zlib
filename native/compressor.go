@@ -4,149 +4,72 @@ package native
 #cgo CFLAGS: -I/zlib/
 #cgo LDFLAGS: ${SRCDIR}/libs/libz.a
 
-#include "util.h"
-#include <stdlib.h>
+#include "zlib/zlib.h"
 
-// Returns ptr to stream
-longint initCompressor(signedint level) {
-    z_stream* s = (z_stream*) calloc(1, sizeof(z_stream));
-    int ok = deflateInit(s, level);
-
-    if (ok != Z_OK) {
-        errno = 1;
-        return -1;
-    }
-
-    return (longint) s;
-}
-
-void resetCompressor(longint ptr) {
-    z_stream* s = (z_stream*) ptr;
-    int ok = deflateReset(s);
-
-    if (ok != Z_OK) {
-        errno = 1;
-    }
-}
-
-void closeCompressor(longint ptr) {
-    z_stream* s = (z_stream*) ptr;
-    int ok = deflateEnd(s);
-
-    free(s);
-
-    if(ok != Z_OK) errno = 1;
-}
-
-signedint compressData(longint ptr, longint inPtr, longint inSize, longint outPtr, longint outSize, signedint* hasCompleted, longint* processed) {
-    z_stream* s = (z_stream*) ptr;
-
-    prepare(s, inPtr, inSize, outPtr, outSize);
-
-    int ok = deflate (s, Z_FINISH);
-
-    switch (ok) {
-    case Z_STREAM_END:
-        *hasCompleted = true;
-        break;
-    case Z_OK:
-        break;
-    default:
-        errno = 1;
-        return -1;
-    }
-
-    *processed = inSize - s->avail_in;
-
-    return outSize - s->avail_out;
+// I have no idea why I have to wrap just this function but otherwise cgo won't compile
+int defInit(z_stream* s, int lvl) {
+	return deflateInit(s, lvl);
 }
 */
 import "C"
 import (
 	"fmt"
-	"unsafe"
 )
 
 // Compressor using an underlying C zlib stream to compress (deflate) data
 type Compressor struct {
-	ptr          int64
-	hasCompleted int
-	processed    int64
-	level        int
-	isClosed     bool
+	p     processor
+	level int
 }
 
 // IsClosed returns whether the StreamCloser has closed the underlying stream
 func (c *Compressor) IsClosed() bool {
-	return c.isClosed
+	return c.p.isClosed
 }
 
 // NewCompressor returns and initializes a new Compressor with zlib compression stream initialized
 func NewCompressor(lvl int) (*Compressor, error) {
-	ptr, err := C.initCompressor(C.int(lvl))
-	if err != nil {
-		C.clearError()
-		return nil, fmt.Errorf(errInitialize.Error(), ": compression level might be invalid")
+	p := newProcessor()
+
+	if ok := C.defInit(p.s, C.int(lvl)); ok != C.Z_OK {
+		return nil, determineError(fmt.Errorf("%s: %s", errInitialize.Error(), "compression level might be invalid"), ok)
 	}
 
-	return &Compressor{int64(ptr), 0, 0, lvl, false}, nil
+	return &Compressor{p, lvl}, nil
 }
 
 // Close closes the underlying zlib stream and frees the allocated memory
 func (c *Compressor) Close() error {
-	c.isClosed = true
-	_, err := C.closeCompressor(C.longlong(c.ptr))
-	if err != nil {
-		C.clearError()
-		return errClose
+	ok := C.deflateEnd(c.p.s)
+
+	c.p.close()
+
+	if ok != C.Z_OK {
+		return determineError(errClose, ok)
 	}
 	return nil
 }
 
 // Compress compresses the given data and returns it as byte slice
 func (c *Compressor) Compress(in []byte) ([]byte, error) {
-	inMem := &in[0]
-	inIdx := 0
-
-	outIdx := 0
-
-	buf := make([]byte, 0, len(in)/assumedCompressionFactor)
-
-	for c.hasCompleted == 0 {
-		buf = grow(buf, minWritable)
-
-		outMem := startMemAddress(buf)
-
-		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
-		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
-
-		compressed, err := C.compressData(
-			C.longlong(c.ptr),
-			C.longlong(readMem),
-			C.longlong(len(in)-inIdx),
-			C.longlong(writeMem),
-			C.longlong(cap(buf)-outIdx),
-			(*C.int)(unsafe.Pointer(&c.hasCompleted)),
-			(*C.longlong)(unsafe.Pointer(&c.processed)),
-		)
-		if err != nil {
-			C.clearError()
-			return nil, errProcess
-		}
-
-		inIdx += int(c.processed)
-		outIdx += int(compressed)
-		buf = buf[:outIdx]
+	condition := func() bool {
+		return !c.p.hasCompleted
 	}
 
-	c.processed = 0
-	c.hasCompleted = 0
-
-	_, err := C.resetCompressor(C.longlong(c.ptr))
-	if err != nil {
-		C.clearError()
-		return buf, errReset
+	zlibProcess := func() C.int {
+		return C.deflate(c.p.s, C.Z_FINISH)
 	}
 
-	return buf, nil
+	specificReset := func() C.int {
+		return C.deflateReset(c.p.s)
+	}
+
+	_, b, err := c.p.process(
+		in,
+		make([]byte, 0, len(in)/assumedCompressionFactor),
+		condition,
+		zlibProcess,
+		specificReset,
+	)
+	return b, err
 }

@@ -3,16 +3,13 @@ package zlib
 import (
 	"bytes"
 	"compress/zlib"
-	"encoding/json"
-	"io/ioutil"
-	"os"
 	"testing"
 )
 
 // practical benchmarks
 
 func BenchmarkReadBytesMcPacketsDefault(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/compressed_mc_packets.json")
+	compressedMcPackets := loadPackets("test/mc_packets/compressed_mc_packets.json")
 	r, _ := NewReader(nil)
 
 	for _, v := range compressedMcPackets {
@@ -21,7 +18,7 @@ func BenchmarkReadBytesMcPacketsDefault(b *testing.B) {
 }
 
 func BenchmarkReadMcPacketsDefault(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/compressed_mc_packets.json")
+	compressedMcPackets := loadPackets("test/mc_packets/compressed_mc_packets.json")
 
 	p := make([]byte, 300_000)
 	buf := bytes.Buffer{}
@@ -33,7 +30,7 @@ func BenchmarkReadMcPacketsDefault(b *testing.B) {
 }
 
 func BenchmarkReadMcPacketsDefaultStd(b *testing.B) {
-	compressedMcPackets := loadPackets("/test/mc_packets/compressed_mc_packets.json")
+	compressedMcPackets := loadPackets("test/mc_packets/compressed_mc_packets.json")
 
 	p := make([]byte, 300_000)
 	buf := bytes.Buffer{}
@@ -42,15 +39,6 @@ func BenchmarkReadMcPacketsDefaultStd(b *testing.B) {
 		buf.Write(v)
 		r.Read(p)
 	}
-}
-
-func loadPackets(loc string) [][]byte {
-	var b [][]byte
-	jsonFile, _ := os.Open(loc)
-	defer jsonFile.Close()
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, b)
-	return b
 }
 
 // laboratory condition benchmarks
