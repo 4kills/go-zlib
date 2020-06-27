@@ -3,9 +3,6 @@ package zlib
 import (
 	"bytes"
 	"compress/zlib"
-	"encoding/json"
-	"io/ioutil"
-	"os"
 	"testing"
 )
 
@@ -42,15 +39,6 @@ func BenchmarkReadMcPacketsDefaultStd(b *testing.B) {
 		buf.Write(v)
 		r.Read(p)
 	}
-}
-
-func loadPackets(loc string) [][]byte {
-	var b [][]byte
-	jsonFile, _ := os.Open(loc)
-	defer jsonFile.Close()
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &b)
-	return b
 }
 
 // laboratory condition benchmarks
