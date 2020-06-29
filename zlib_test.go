@@ -264,7 +264,7 @@ func TestReaderReset(t *testing.T) {
 
 func TestHuffmanOnly(t *testing.T) {
 	// ASSUMES READ AND WRITE WORK PROPERLY
-	w, err := NewWriterLevel(nil, HuffmanOnly)
+	w, err := NewWriterLevelStrategy(nil, DefaultCompression, HuffmanOnly)
 	if err != nil {
 		t.Error(err)
 	}

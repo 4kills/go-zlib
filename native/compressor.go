@@ -7,14 +7,17 @@ package native
 #include "zlib/zlib.h"
 
 // I have no idea why I have to wrap just this function but otherwise cgo won't compile
-int defInit(z_stream* s, int lvl) {
-	return deflateInit(s, lvl);
+int defInit2(z_stream* s, int lvl, int method, int windowBits, int memLevel, int strategy) {
+	return deflateInit2(s, lvl, method, windowBits, memLevel, strategy);
 }
 */
 import "C"
 import (
 	"fmt"
 )
+
+const defaultWindowBits = 15
+const defaultMemLevel = 8
 
 // Compressor using an underlying C zlib stream to compress (deflate) data
 type Compressor struct {
@@ -29,9 +32,15 @@ func (c *Compressor) IsClosed() bool {
 
 // NewCompressor returns and initializes a new Compressor with zlib compression stream initialized
 func NewCompressor(lvl int) (*Compressor, error) {
+	return NewCompressorStrategy(lvl, int(C.Z_DEFAULT_STRATEGY))
+}
+
+// NewCompressorStrategy returns and initializes a new Compressor with given level and strategy
+// with zlib compression stream initialized
+func NewCompressorStrategy(lvl, strat int) (*Compressor, error) {
 	p := newProcessor()
 
-	if ok := C.defInit(p.s, C.int(lvl)); ok != C.Z_OK {
+	if ok := C.defInit2(p.s, C.int(lvl), C.Z_DEFLATED, C.int(defaultWindowBits), C.int(defaultMemLevel), C.int(strat)); ok != C.Z_OK {
 		return nil, determineError(fmt.Errorf("%s: %s", errInitialize.Error(), "compression level might be invalid"), ok)
 	}
 
