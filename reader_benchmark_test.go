@@ -14,25 +14,30 @@ const compressedMcPacketsLoc = "test/mc_packets/compressed_mc_packets.json"
 var compressedMcPackets [][]byte
 
 func BenchmarkReadBytesAllMcPacketsDefault(b *testing.B) {
+	b.StopTimer()
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
 
 	benchmarkReadBytesMcPacketsGeneric(compressedMcPackets, b)
 }
 
 func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
-	r, _ := NewReader(nil)
+	r, _ := NewReader(bytes.NewBuffer(compressedMcPackets[0]))
 	defer r.Close()
 
 	reportBytesPerChunk(input, b)
 
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
-			r.ReadBytes(v)
+			n, o, err := r.ReadBytes(v)
+			b.Log(len(v), "::", n, "::", len(o), err)
+
 		}
 	}
 }
 
 func BenchmarkReadAllMcPacketsDefault(b *testing.B) {
+	b.StopTimer()
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
 	buf := &bytes.Buffer{}
 	r, _ := NewReader(buf)
@@ -41,6 +46,7 @@ func BenchmarkReadAllMcPacketsDefault(b *testing.B) {
 }
 
 func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
+	b.StopTimer()
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
 	buf := bytes.NewBuffer(compressedMcPackets[0]) // the std lib loses it's shit if buf is empty
 	r, _ := zlib.NewReader(buf)
@@ -51,21 +57,16 @@ func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
 func benchmarkReadMcPacketsGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, input [][]byte, b *testing.B) {
 	reportBytesPerChunk(input, b)
 
-	s := 0
-	for _, v := range input {
-		if len(v) > s {
-			s = len(v)
-		}
-	}
-
 	defer r.Close()
 
-	out := make([]byte, s)
+	out := make([]byte, 300000)
+
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
 			underlyingReader.Write(v)
-			r.Read(out)
+			n, err := r.Read(out)
 		}
 	}
 }
