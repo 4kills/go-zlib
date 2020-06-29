@@ -29,9 +29,7 @@ func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
-			n, o, err := r.ReadBytes(v)
-			b.Log(len(v), "::", n, "::", len(o), err)
-
+			r.ReadBytes(v)
 		}
 	}
 }
@@ -51,7 +49,7 @@ func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
 	buf := bytes.NewBuffer(compressedMcPackets[0]) // the std lib loses it's shit if buf is empty
 	r, _ := zlib.NewReader(buf)
 
-	benchmarkReadMcPacketsGeneric(r, buf, compressedMcPackets, b)
+	benchmarkReadMcPacketsGeneric(r, buf, compressedMcPackets[1:2], b)
 }
 
 func benchmarkReadMcPacketsGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, input [][]byte, b *testing.B) {
@@ -66,7 +64,7 @@ func benchmarkReadMcPacketsGeneric(r io.ReadCloser, underlyingReader *bytes.Buff
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
 			underlyingReader.Write(v)
-			n, err := r.Read(out)
+			r.Read(out)
 		}
 	}
 }
@@ -110,6 +108,7 @@ func BenchmarkReadBytes65536BDefault(b *testing.B) {
 }
 
 func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
+	b.StopTimer()
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
@@ -117,6 +116,7 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 
 	r, _ := NewReader(nil)
 	defer r.Close()
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		r.ReadBytes(compressed)
@@ -160,20 +160,9 @@ func BenchmarkRead65536BDefault(b *testing.B) {
 }
 
 func benchmarkReadLevel(input []byte, level int, b *testing.B) {
-	w, _ := NewWriterLevel(nil, level)
-	defer w.Close()
-
-	compressed, _ := w.WriteBytes(input)
-
-	r, _ := NewReader(bytes.NewBuffer(compressed))
-	defer r.Close()
-
-	decompressed := make([]byte, len(input))
-
-	for i := 0; i < b.N; i++ {
-		r.Read(decompressed)
-		r.Reset(bytes.NewBuffer(compressed)) // requires some time but only very little compared to the benchmarked method r.Read
-	}
+	buf := &bytes.Buffer{}
+	r, _ := NewReader(buf)
+	benchmarkReadLevelGeneric(r, buf, input, level, b)
 }
 
 func BenchmarkRead64BBestCompressionStd(b *testing.B) {
@@ -212,24 +201,30 @@ func BenchmarkRead65536BDefaultStd(b *testing.B) {
 	benchmarkReadLevelStd(xByte(65536), DefaultCompression, b)
 }
 
-var read int
-
 func benchmarkReadLevelStd(input []byte, level int, b *testing.B) {
+	buf := &bytes.Buffer{}
+	buf.Write([]byte{1})
+	r, _ := zlib.NewReader(buf)
+	buf.Reset()
+	benchmarkReadLevelGeneric(r, buf, input, level, b)
+}
+
+func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, input []byte, level int, b *testing.B) {
+	b.StopTimer()
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
 	compressed, _ := w.WriteBytes(input)
 
-	buf := bytes.NewBuffer(compressed)
-	r, _ := zlib.NewReader(buf)
+	underlyingReader.Write(compressed)
+
 	defer r.Close()
 
 	decompressed := make([]byte, len(input))
+	b.StartTimer()
 
-	n := 0
 	for i := 0; i < b.N; i++ {
-		n, _ = r.Read(decompressed)
-		buf.Write(compressed) // requires some time but only very little compared to the benchmarked method r.Read
+		r.Read(decompressed)
+		underlyingReader.Write(compressed) // requires some time but only very little compared to the benchmarked method r.Read
 	}
-	read = n
 }
