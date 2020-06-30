@@ -46,10 +46,27 @@ func BenchmarkReadAllMcPacketsDefault(b *testing.B) {
 func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
 	b.StopTimer()
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
-	buf := bytes.NewBuffer(compressedMcPackets[0]) // the std lib loses it's shit if buf is empty
-	r, _ := zlib.NewReader(buf)
 
-	benchmarkReadMcPacketsGeneric(r, buf, compressedMcPackets, b)
+	reportBytesPerChunk(compressedMcPackets, b)
+
+	buf := bytes.NewBuffer(compressedMcPackets[0]) // the std library needs this or else I can't create a reader
+	r, _ := zlib.NewReader(buf)
+	defer r.Close()
+
+	decompressed := make([]byte, 300000)
+
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		for _, v := range compressedMcPackets {
+			b.StopTimer()
+			res, _ := r.(zlib.Resetter)
+			res.Reset(bytes.NewBuffer(v), nil) // to make the std reader work
+			b.StartTimer()
+
+			r.Read(decompressed)
+		}
+	}
 }
 
 func benchmarkReadMcPacketsGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, input [][]byte, b *testing.B) {
@@ -162,50 +179,6 @@ func BenchmarkRead65536BDefault(b *testing.B) {
 func benchmarkReadLevel(input []byte, level int, b *testing.B) {
 	buf := &bytes.Buffer{}
 	r, _ := NewReader(buf)
-	benchmarkReadLevelGeneric(r, buf, input, level, b)
-}
-
-func BenchmarkRead64BBestCompressionStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(64), BestCompression, b)
-}
-
-func BenchmarkRead8192BBestCompressionStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(8192), BestCompression, b)
-}
-
-func BenchmarkRead65536BBestCompressionStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(65536), BestCompression, b)
-}
-
-func BenchmarkRead64BBestSpeedStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(64), BestSpeed, b)
-}
-
-func BenchmarkRead8192BBestSpeedStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(8192), BestSpeed, b)
-}
-
-func BenchmarkRead65536BBestSpeedStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(65536), BestSpeed, b)
-}
-
-func BenchmarkRead64BDefaultStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(64), DefaultCompression, b)
-}
-
-func BenchmarkRead8192BDefaultStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(8192), DefaultCompression, b)
-}
-
-func BenchmarkRead65536BDefaultStd(b *testing.B) {
-	benchmarkReadLevelStd(xByte(65536), DefaultCompression, b)
-}
-
-func benchmarkReadLevelStd(input []byte, level int, b *testing.B) {
-	buf := &bytes.Buffer{}
-	buf.Write([]byte{1})
-	r, _ := zlib.NewReader(buf)
-	buf.Reset()
 	benchmarkReadLevelGeneric(r, buf, input, level, b)
 }
 
