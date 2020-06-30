@@ -9,12 +9,16 @@ import (
 const (
 	minCompression = 0
 	maxCompression = 9
+
+	minStrategy = 0
+	maxStrategy = 4
 )
 
 // Writer compresses and writes given data to an underlying io.Writer
 type Writer struct {
 	w          io.Writer
 	level      int
+	strategy   int
 	compressor *native.Compressor
 }
 
@@ -27,13 +31,22 @@ func NewWriter(w io.Writer) (*Writer, error) {
 // NewWriterLevel performs like NewWriter but you may also specify the compression level.
 // w may be nil if you only plan on using WriteBytes.
 func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
-	if level != DefaultCompression && level != HuffmanOnly && (level < minCompression || level > maxCompression) {
+	return NewWriterLevelStrategy(w, level, DefaultStrategy)
+}
+
+// NewWriterLevelStrategy performs like NewWriter but you may also specify the compression level and strategy.
+// w may be nil if you only plan on using WriteBytes.
+func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
+	if level != DefaultCompression && (level < minCompression || level > maxCompression) {
 		return nil, errInvalidLevel
 	}
+	if strategy < minCompression || strategy > maxCompression {
+		return nil, errInvalidStrategy
+	}
 
-	c, err := native.NewCompressor(level)
+	c, err := native.NewCompressorStrategy(level, strategy)
 
-	return &Writer{w, level, c}, err
+	return &Writer{w, level, strategy, c}, err
 }
 
 // WriteBytes takes uncompressed data p, compresses it and returns it as new byte slice.

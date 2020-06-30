@@ -216,15 +216,13 @@ func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, 
 
 	compressed, _ := w.WriteBytes(input)
 
-	underlyingReader.Write(compressed)
-
 	defer r.Close()
 
 	decompressed := make([]byte, len(input))
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		r.Read(decompressed)
 		underlyingReader.Write(compressed) // requires some time but only very little compared to the benchmarked method r.Read
+		r.Read(decompressed)
 	}
 }
