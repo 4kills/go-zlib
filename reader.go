@@ -55,6 +55,10 @@ func (r *Reader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
+	if r.buffer.Len() == 0 {
+		return 0, io.EOF
+	}
+
 	in := make([]byte, r.buffer.Len())
 	copy(in, r.buffer.Bytes())
 	processed, out, err := r.decompressor.Decompress(in)
