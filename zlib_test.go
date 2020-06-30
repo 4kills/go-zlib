@@ -9,6 +9,7 @@ import (
 const repeatCount = 30
 
 var shortString = []byte("hello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\n")
+var longString []byte
 
 // primarly checks properly working EOF conditions of Read
 func TestWrite_ReadReadFull_wShortString(t *testing.T) {
@@ -322,6 +323,18 @@ func TestHuffmanOnly(t *testing.T) {
 	}
 
 	sliceEquals(t, shortString, out)
+}
+
+// HELPER
+
+func makeLongString() {
+	if longString != nil {
+		return
+	}
+
+	for i := 0; i < 100; i++ {
+		longString = append(longString, shortString...)
+	}
 }
 
 func sliceEquals(t *testing.T, expected, actual []byte) {
