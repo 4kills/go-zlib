@@ -24,7 +24,7 @@ func BenchmarkWriteBytesAllMcPacketsDefault(b *testing.B) {
 }
 
 func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
-	w, _ := NewWriter(nil)
+	w := NewWriter(nil)
 	defer w.Close()
 
 	reportBytesPerChunk(input, b)
@@ -38,7 +38,7 @@ func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 
 func BenchmarkWriteAllMcPacketsDefault(b *testing.B) {
 	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
-	w, _ := NewWriter(&bytes.Buffer{})
+	w := NewWriter(&bytes.Buffer{})
 
 	benchmarkWriteMcPacketsGeneric(w, decompressedMcPackets, b)
 }

@@ -24,8 +24,14 @@ type Writer struct {
 
 // NewWriter returns a new Writer with the underlying io.Writer to compress to.
 // w may be nil if you only plan on using WriteBytes.
-func NewWriter(w io.Writer) (*Writer, error) {
-	return NewWriterLevel(w, DefaultCompression)
+// Panics if the underlying c stream cannot be allocated which would indicate a severe error
+// not only for this library but also for the rest of your code.
+func NewWriter(w io.Writer) *Writer {
+	zw, err := NewWriterLevel(w, DefaultCompression)
+	if err != nil {
+		panic(err)
+	}
+	return zw
 }
 
 // NewWriterLevel performs like NewWriter but you may also specify the compression level.
@@ -98,12 +104,12 @@ func (zw *Writer) Close() error {
 	return zw.compressor.Close()
 }
 
-// Flush writes any unwritten data to the underlying writer
+// Flush does NOTHING. Write always flushes content to the underlying writer.
+// This method just exists for easy interchangability with the go std zlib library
 func (zw *Writer) Flush() error {
 	if err := checkClosed(zw.compressor); err != nil {
 		return err
 	}
-	// if write is successful there is will be no unwritten data
 	return nil
 }
 
