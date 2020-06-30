@@ -194,6 +194,41 @@ func TestWrite_Read_Repeated(t *testing.T) {
 	sliceEquals(t, rep, out.Bytes())
 }
 
+func TestRead_RepeatedContinuous(t *testing.T) {
+	w, err := NewWriter(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	compressed, _ := w.WriteBytes(shortString)
+	if err != nil {
+		t.Error(err)
+	}
+
+	b := bytes.Buffer{}
+	r, err := NewReader(&b)
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	for i := 0; i < repeatCount; i++ {
+		b.Write(compressed)
+
+		out := make([]byte, len(shortString))
+		n, err := r.Read(out)
+		if err != nil && err != io.EOF {
+			t.Error(err)
+		}
+		if n != len(shortString) {
+			t.Errorf("read count doesn't match: want %d, got %d", len(shortString), n)
+		}
+
+		sliceEquals(t, shortString, out)
+	}
+}
+
 func TestWrite_ReadBytes_Repeated(t *testing.T) {
 	rep := make([]byte, 0, len(shortString)*repeatCount)
 	for i := 0; i < repeatCount; i++ {
