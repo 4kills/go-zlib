@@ -35,18 +35,19 @@ void prepare(z_stream* s,  int64_t inPtr, int64_t inSize, int64_t outPtr, int64_
 }
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+)
 
 type processor struct {
 	s            *C.z_stream
 	hasCompleted bool
-	processed    int
 	readable     int
 	isClosed     bool
 }
 
 func newProcessor() processor {
-	return processor{C.newStream(), false, 0, 0, false}
+	return processor{C.newStream(), false, 0, false}
 }
 
 func (p *processor) prepare(inPtr uintptr, inSize int, outPtr uintptr, outSize int) {
@@ -63,14 +64,6 @@ func (p *processor) close() {
 	C.freeMem(p.s)
 	p.s = nil
 	p.isClosed = true
-}
-
-func (p *processor) updateProcessed(inSize int) {
-	p.processed = int(C.getProcessed(p.s, C.longlong(inSize)))
-}
-
-func (p *processor) compressed(outSize int) int {
-	return int(C.getCompressed(p.s, C.longlong(outSize)))
 }
 
 func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) (int, []byte, error) {
@@ -99,24 +92,19 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 			p.hasCompleted = true
 		case C.Z_OK:
 		default:
-			return p.processed, nil, determineError(errProcess, ok)
+			return inIdx, buf, determineError(errProcess, ok)
 		}
 
-		p.updateProcessed(readLen)
-		compressed := p.compressed(writeLen)
-
-		inIdx += p.processed
-		outIdx += int(compressed)
+		inIdx += int(C.getProcessed(p.s, C.longlong(readLen)))
+		outIdx += int(C.getCompressed(p.s, C.longlong(writeLen)))
 		buf = buf[:outIdx]
 	}
 
-	processed := p.processed
-	p.processed = 0
 	p.hasCompleted = false
 
 	if ok := specificReset(); ok != C.Z_OK {
-		return processed, buf, determineError(errReset, ok)
+		return inIdx, buf, determineError(errReset, ok)
 	}
 
-	return processed, buf, nil
+	return inIdx, buf, nil
 }
