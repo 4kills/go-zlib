@@ -119,33 +119,33 @@ func TestHuffmanOnly(t *testing.T) {
 }
 
 func TestWrite_Read_Repeated(t *testing.T) {
-	testWrite_Read_Repeated(shortString, t)
+	testWriteReadRepeated(shortString, t)
 }
 
 func TestRead_RepeatedContinuous(t *testing.T) {
-	testRead_RepeatedContinuous(shortString, t)
+	testReadRepeatedContinuous(shortString, t)
 }
 
 func TestWrite_ReadBytes_Repeated(t *testing.T) {
-	testWrite_ReadBytes_Repeated(shortString, t)
+	testWriteReadBytesRepeated(shortString, t)
 }
 
 func TestRead_RepeatedContinuous_wLongString(t *testing.T) {
 	makeLongString()
-	testRead_RepeatedContinuous(longString, t)
+	testReadRepeatedContinuous(longString, t)
 }
 
 func TestWrite_ReadBytes_Repeated_wLongString(t *testing.T) {
 	makeLongString()
-	testWrite_ReadBytes_Repeated(longString, t)
+	testWriteReadBytesRepeated(longString, t)
 }
 
 func TestWrite_Read_Repeated_wLongString(t *testing.T) {
 	makeLongString()
-	testWrite_Read_Repeated(longString, t)
+	testWriteReadRepeated(longString, t)
 }
 
-func testWrite_ReadBytes_Repeated(input []byte, t *testing.T) {
+func testWriteReadBytesRepeated(input []byte, t *testing.T) {
 	rep, b := testWriteRepeated(input, t)
 
 	r, err := NewReader(nil)
@@ -167,7 +167,7 @@ func testWrite_ReadBytes_Repeated(input []byte, t *testing.T) {
 	sliceEquals(t, rep, out.Bytes())
 }
 
-func testRead_RepeatedContinuous(input []byte, t *testing.T) {
+func testReadRepeatedContinuous(input []byte, t *testing.T) {
 	compressed := testWriteBytes(input, t)
 
 	b := bytes.Buffer{}
@@ -193,7 +193,7 @@ func testRead_RepeatedContinuous(input []byte, t *testing.T) {
 	}
 }
 
-func testWrite_Read_Repeated(input []byte, t *testing.T) {
+func testWriteReadRepeated(input []byte, t *testing.T) {
 	rep, b := testWriteRepeated(input, t)
 
 	r, err := NewReader(b)
