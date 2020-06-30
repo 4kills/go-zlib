@@ -13,19 +13,9 @@ var longString []byte
 
 // primarly checks properly working EOF conditions of Read
 func TestWrite_ReadReadFull_wShortString(t *testing.T) {
-	var b bytes.Buffer
-	w, err := NewWriter(&b)
-	if err != nil {
-		t.Error(err)
-	}
-	defer w.Close()
+	b := testWrite(shortString, t)
 
-	_, err = w.Write(shortString)
-	if err != nil {
-		t.Error(err)
-	}
-
-	r, err := NewReader(&b)
+	r, err := NewReader(b)
 	if err != nil {
 		t.Error(err)
 	}
@@ -42,19 +32,9 @@ func TestWrite_ReadReadFull_wShortString(t *testing.T) {
 
 // primarly checks properly working EOF conditions of Read
 func TestReadioCopy_wShortString(t *testing.T) {
-	var b bytes.Buffer
-	w, err := NewWriter(&b)
-	if err != nil {
-		t.Error(err)
-	}
-	defer w.Close()
+	b := testWrite(shortString, t)
 
-	_, err = w.Write(shortString)
-	if err != nil {
-		t.Error(err)
-	}
-
-	r, err := NewReader(&b)
+	r, err := NewReader(b)
 	if err != nil {
 		t.Error(err)
 	}
@@ -70,19 +50,9 @@ func TestReadioCopy_wShortString(t *testing.T) {
 }
 
 func TestWrite_ReadOneGo_wShortString(t *testing.T) {
-	var b bytes.Buffer
-	w, err := NewWriter(&b)
-	if err != nil {
-		t.Error(err)
-	}
-	defer w.Close()
+	b := testWrite(shortString, t)
 
-	_, err = w.Write(shortString)
-	if err != nil {
-		t.Error(err)
-	}
-
-	r, err := NewReader(&b)
+	r, err := NewReader(b)
 	if err != nil {
 		t.Error(err)
 	}
@@ -101,70 +71,20 @@ func TestWrite_ReadOneGo_wShortString(t *testing.T) {
 }
 
 func TestWrite_ReadBytes_wShortString(t *testing.T) {
-	var b bytes.Buffer
-	w, err := NewWriter(&b)
-	if err != nil {
-		t.Error(err)
-	}
-	defer w.Close()
-
-	_, err = w.Write(shortString)
-	if err != nil {
-		t.Error(err)
-	}
-
-	r, err := NewReader(nil)
-	if err != nil {
-		t.Error(err)
-	}
-	defer r.Close()
-
-	_, out, err := r.ReadBytes(b.Bytes())
-	if err != nil {
-		t.Error(err)
-	}
-
+	b := testWrite(shortString, t)
+	out := testReadBytes(b, t)
 	sliceEquals(t, shortString, out)
 }
 
 func TestWriteBytes_ReadBytes_wShortString(t *testing.T) {
-	w, err := NewWriter(nil)
-	if err != nil {
-		t.Error(err)
-	}
-	defer w.Close()
-
-	b, err := w.WriteBytes(shortString)
-	if err != nil {
-		t.Error(err)
-	}
-
-	r, err := NewReader(nil)
-	if err != nil {
-		t.Error(err)
-	}
-	defer r.Close()
-
-	_, out, err := r.ReadBytes(b)
-	if err != nil {
-		t.Error(err)
-	}
-
+	b := testWriteBytes(shortString, t)
+	out := testReadBytes(bytes.NewBuffer(b), t)
 	sliceEquals(t, shortString, out)
 }
 
 func TestReaderReset(t *testing.T) {
 	// ASSUMES READ AND WRITE WORK PROPERLY
-	w, err := NewWriterLevel(nil, DefaultCompression)
-	if err != nil {
-		t.Error(err)
-	}
-	defer w.Close()
-
-	b, err := w.WriteBytes(shortString)
-	if err != nil {
-		t.Error(err)
-	}
+	b := testWriteBytes(shortString, t)
 
 	r, err := NewReader(bytes.NewReader(b))
 	if err != nil {
@@ -195,17 +115,7 @@ func TestHuffmanOnly(t *testing.T) {
 		t.Error(err)
 	}
 
-	r, err := NewReader(nil)
-	if err != nil {
-		t.Error(err)
-	}
-	defer r.Close()
-
-	_, out, err := r.ReadBytes(b)
-	if err != nil {
-		t.Error(err)
-	}
-
+	out := testReadBytes(bytes.NewBuffer(b), t)
 	sliceEquals(t, shortString, out)
 }
 
@@ -350,6 +260,49 @@ func testWrite_Read_Repeated(input []byte, t *testing.T) {
 	}
 
 	sliceEquals(t, rep, out.Bytes())
+}
+
+func testWriteBytes(input []byte, t *testing.T) []byte {
+	w, err := NewWriter(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	b, err := w.WriteBytes(input)
+	if err != nil {
+		t.Error(err)
+	}
+	return b
+}
+
+func testReadBytes(b *bytes.Buffer, t *testing.T) []byte {
+	r, err := NewReader(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	_, out, err := r.ReadBytes(b.Bytes())
+	if err != nil {
+		t.Error(err)
+	}
+	return out
+}
+
+func testWrite(input []byte, t *testing.T) *bytes.Buffer {
+	var b bytes.Buffer
+	w, err := NewWriter(&b)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	_, err = w.Write(shortString)
+	if err != nil {
+		t.Error(err)
+	}
+	return &b
 }
 
 // HELPER
