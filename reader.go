@@ -41,7 +41,7 @@ func (r *Reader) ReadBytes(compressed []byte) (n int, decompressed []byte, err e
 }
 
 // Read reads compressed data from the provided Reader into the provided buffer p.
-// Please consider using ReadBytes instead, as it is faster and generally easier to use
+// Please consider using ReadBytes instead, as it is slightly faster and generally easier to use
 func (r *Reader) Read(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, errNoInput
@@ -59,24 +59,22 @@ func (r *Reader) Read(p []byte) (int, error) {
 		return 0, io.EOF
 	}
 
-	in := make([]byte, r.buffer.Len())
-	copy(in, r.buffer.Bytes())
-	processed, out, err := r.decompressor.Decompress(in)
+	processed, out, err := r.decompressor.Decompress(r.buffer.Bytes())
 	if err != nil {
 		return 0, err
 	}
 	r.buffer.Next(processed)
 
-	if len(out) <= len(p) {
-		copy(p, out)
-		if r.buffer.Len() == 0 {
-			return len(out), io.EOF
-		}
-		return len(out), nil
+	if len(out) > len(p) {
+		copy(p, out[:len(p)])
+		return len(p), io.ErrShortBuffer
 	}
 
-	copy(p, out[:len(p)])
-	return len(p), io.ErrShortBuffer
+	copy(p, out)
+	if r.buffer.Len() == 0 {
+		return len(out), io.EOF
+	}
+	return len(out), nil
 }
 
 // Reset resets the Reader to the state of being initialized with zlib.NewX(..),
