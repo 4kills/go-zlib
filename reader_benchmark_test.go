@@ -49,7 +49,7 @@ func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
 	buf := bytes.NewBuffer(compressedMcPackets[0]) // the std lib loses it's shit if buf is empty
 	r, _ := zlib.NewReader(buf)
 
-	benchmarkReadMcPacketsGeneric(r, buf, compressedMcPackets[1:2], b)
+	benchmarkReadMcPacketsGeneric(r, buf, compressedMcPackets, b)
 }
 
 func benchmarkReadMcPacketsGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, input [][]byte, b *testing.B) {
