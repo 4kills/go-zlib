@@ -325,6 +325,127 @@ func TestHuffmanOnly(t *testing.T) {
 	sliceEquals(t, shortString, out)
 }
 
+func TestRead_RepeatedContinuous_wLongString(t *testing.T) {
+	makeLongString()
+
+	w, err := NewWriter(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	compressed, _ := w.WriteBytes(longString)
+	if err != nil {
+		t.Error(err)
+	}
+
+	b := bytes.Buffer{}
+	r, err := NewReader(&b)
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	for i := 0; i < repeatCount; i++ {
+		b.Write(compressed)
+
+		out := make([]byte, len(longString))
+		n, err := r.Read(out)
+		if err != nil && err != io.EOF {
+			t.Error(err)
+		}
+		if n != len(longString) {
+			t.Errorf("read count doesn't match: want %d, got %d", len(longString), n)
+		}
+
+		sliceEquals(t, longString, out)
+	}
+}
+
+func TestWrite_ReadBytes_Repeated_wLongString(t *testing.T) {
+	makeLongString()
+
+	rep := make([]byte, 0, len(longString)*repeatCount)
+	for i := 0; i < repeatCount; i++ {
+		rep = append(rep, longString...)
+	}
+
+	var b bytes.Buffer
+	w, err := NewWriter(&b)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	for i := 0; i < repeatCount; i++ {
+		_, err = w.Write(longString)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	r, err := NewReader(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
+	m := b.Len()
+	for i := 0; i < repeatCount; i++ {
+		_, decomp, err := r.ReadBytes(b.Next(m / repeatCount))
+		if err != nil {
+			t.Error(err)
+		}
+		out.Write(decomp)
+	}
+
+	sliceEquals(t, rep, out.Bytes())
+}
+
+func TestWrite_Read_Repeated_wLongString(t *testing.T) {
+	makeLongString()
+	rep := make([]byte, 0, len(longString)*repeatCount)
+	for i := 0; i < repeatCount; i++ {
+		rep = append(rep, longString...)
+	}
+
+	var b bytes.Buffer
+	w, err := NewWriter(&b)
+	if err != nil {
+		t.Error(err)
+	}
+	defer w.Close()
+
+	for i := 0; i < repeatCount; i++ {
+		_, err = w.Write(longString)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	r, err := NewReader(&b)
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
+	for i := 0; i < repeatCount; i++ {
+		o := make([]byte, len(rep)/repeatCount)
+		n, err := r.Read(o)
+		out.Write(o[:n])
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	sliceEquals(t, rep, out.Bytes())
+}
+
 // HELPER
 
 func makeLongString() {
@@ -332,7 +453,7 @@ func makeLongString() {
 		return
 	}
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 150; i++ {
 		longString = append(longString, shortString...)
 	}
 }
