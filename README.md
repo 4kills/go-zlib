@@ -2,8 +2,8 @@
 
 <p align="center">
 
-<a href="http://unlicense.org/">
-<img src="https://img.shields.io/badge/license-Unlicense-blue.svg" alt="License: Unlicense">
+<a href="https://github.com/4kills/zlib/blob/master/LICENSE">
+<img src="https://img.shields.io/badge/license-zlibLicense-blue.svg" alt="License: Unlicense">
 </a>
 
 </p>
@@ -111,7 +111,7 @@ io.Copy(os.Stdout, r)            // read all the decompressed data and write it 
 
 ```go 
 r := zlib.NewReader(nil)         // requires no reader if ReadBytes is used
-defer r.Close()                  // always close when you are done with it
+defer r.Close()                  // always close or bad things will happen
 dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []byte 
 ```
 
@@ -120,9 +120,33 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 # Notes
 
 - **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you liked - for each thread one so to speak. This library is generally considered thread-safe.
-- **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for every compression/decompression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memeory leakage.
+- **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memeory leakage.
+- You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. Right the contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times you do not need to close them until you are completely done with them (perhaps only at the very end of your program).
 
 # License
+
+```txt
+  Copyright (c) 1995-2017 Jean-loup Gailly and Mark Adler
+  Copyright (c) 2020 Dominik Ochs
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+ 
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  
+  3. This notice may not be removed or altered from any source distribution.
+```
 
 # Links 
 
