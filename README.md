@@ -14,6 +14,8 @@ If you want to see for yourself, this library is designed to be completely and e
 
 But it doesn't stop there: This library also offers blazing fast convenience methods that can be used as a clean, alternative interface to that provided by the go standard library, which can be very cumbersome sometimes. 
 
+With this library you may also choose from different `compression strategies` on top of different `compression levels` as with the go standard library.  
+
 ## Table of Contents
 
 - [Features](#features)
@@ -32,6 +34,7 @@ But it doesn't stop there: This library also offers blazing fast convenience met
 # Features
 
 - [x] zlib compression / decompression
+- [x] A variety of different `compression strategies` and `compression levels` to choose from 
 - [x] Seamless interchangeability with the go standard zlib library 
 - [x] Alternative, super fast convenience methods for compression / decompression
 - [x] Benchmarks with comparisons to the go standard zlib library
@@ -124,6 +127,9 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 - **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you liked - for each thread one so to speak. This library is generally considered thread-safe.
 
 - **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memeory leakage.
+
+- **`HuffmanOnly` does NOT work as with the standard library**. This is the only exception from the philosophy to make this library interchangeable with the std lib. If you want to use 
+`HuffmanOnly` refer to the `NewWriterLevelStrategy()` constructor function. However, your existing code won't break by leaving `HuffmanOnly` as argument to `NewWriterLevel()`, it will just use the default compression strategy and compression level 2.  
 
 - You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. Right the contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times you do not need to close them until you are completely done with them (perhaps only at the very end of your program).
 
