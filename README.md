@@ -120,10 +120,14 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 # Notes
 
 - **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you liked - for each thread one so to speak. This library is generally considered thread-safe.
-- **Always Close() your Reader / Writer when you are done with it** - especially if you create a new reader/writer for every compression/decompression you undertake (which is generally discouraged as well). As the C-part of this library is not subject to the go garbage-collector the memory allocated must be freed manually  
+- **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for every compression/decompression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memeory leakage.
 
 # License
 
 # Links 
 
-zlib by Jean-loup Gailly and Mark Adler: [github](https://github.com/madler/zlib) and [website](https://zlib.net/). 
+- Original zlib by Jean-loup Gailly and Mark Adler: 
+    - [github](https://github.com/madler/zlib) 
+    - [website](https://zlib.net/)
+- Go standard zlib by the Go Authors: 
+    - [github](https://github.com/golang/go/tree/master/src/compress/zlib)
