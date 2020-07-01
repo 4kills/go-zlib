@@ -4,7 +4,7 @@ package native
 #cgo CFLAGS: -I/zlib/
 #cgo LDFLAGS: ${SRCDIR}/libs/libz.a
 
-#include "zlib/zlib.h"
+#include "zlib.h"
 #include <stdlib.h>
 #include <stdint.h>
 
