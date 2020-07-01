@@ -1,6 +1,6 @@
 # **zlib** for go
 
-<a href="https://github.com/4kills/zlib/blob/master/LICENSE">
+<a href="https://choosealicense.com/licenses/zlib/">
 <img src="https://img.shields.io/badge/license-zlibLicense-blue.svg" alt="License: zlibLicense">
 </a>
 
