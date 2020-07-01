@@ -79,14 +79,16 @@ func (r *Reader) Read(p []byte) (int, error) {
 
 // Reset resets the Reader to the state of being initialized with zlib.NewX(..),
 // but with the new underlying reader instead. It allows for reuse of the same reader.
-// This will panic if the writer has already been closed
-func (r *Reader) Reset(reader io.Reader) {
+// AS OF NOW dict IS NOT USED. It's just there to implement the Resetter interface
+// to allow for easy interchangablility with the std lib. Just pass nil.
+func (r *Reader) Reset(reader io.Reader, dict []byte) error {
 	if err := checkClosed(r.decompressor); err != nil {
-		panic(err)
+		return err
 	}
 
 	r.buffer = &bytes.Buffer{}
 	r.r = reader
+	return nil
 }
 
 // NewReader returns a new reader, reading from r. It decompresses read data.
@@ -94,4 +96,13 @@ func (r *Reader) Reset(reader io.Reader) {
 func NewReader(r io.Reader) (*Reader, error) {
 	c, err := native.NewDecompressor()
 	return &Reader{r, c, &bytes.Buffer{}}, err
+}
+
+// Resetter resets the zlib.Reader returned by NewReader by assigning a new underyling reader,
+// discarding any buffered data from the previous reader.
+// This interface is mainly for compatability with the std lib
+type Resetter interface {
+	// Reset resets the Reader to the state of being initialized with zlib.NewX(..),
+	// but with the new underlying reader and dict instead. It allows for reuse of the same reader.
+	Reset(r io.Reader, dict []byte) error
 }
