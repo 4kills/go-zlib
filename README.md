@@ -1,14 +1,18 @@
 <h1 align="center"> <b>zlib</b> for go </h1>
 
 <p align="center">
-
 <a href="https://github.com/4kills/zlib/blob/master/LICENSE">
-<img src="https://img.shields.io/badge/license-zlibLicense-blue.svg" alt="License: Unlicense">
+<img src="https://img.shields.io/badge/license-zlibLicense-blue.svg" alt="License: zlibLicense">
 </a>
-
 </p>
 
-Native golang zlib implementation using cgo and the original zlib library written in C by Jean-loup Gailly and Mark Adler. 
+This ultra fast **go zlib library** wraps the original zlib library written in C by Jean-loup Gailly and Mark Adler using cgo. 
+
+**It offers immense performance benefits compared to the standard go zlib library** - especially on <ins>older / lower-end</ins> hardware, as the [benchmarks](#benchmarks) show.
+
+If you want to see for yourself, this library is designed to be completely and easily interchangeable with the go standard zlib library. You won't have to rewrite or modify a single line of code! Witnessing the power of this library is as easy as changing [imports](#import)!
+
+But it doesn't stop there: This library also offers blazing fast convenience methods that can be used as a clean, alternative interface to that provided by the go standard library, which can be very cumbersome sometimes. 
 
 ## Table of Contents
 
@@ -20,8 +24,8 @@ Native golang zlib implementation using cgo and the original zlib library writte
 - [Usage](#usage)
   - [Compress](#compress)
   - [Decompress](#decompress)
-- [Benchmarks](#benchmarks)
 - [Notes](#notes)
+- [Benchmarks](#benchmarks)
 - [License](#license)
 - [Links](#links)
 
@@ -115,13 +119,15 @@ defer r.Close()                  // always close or bad things will happen
 dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []byte 
 ```
 
-# Benchmarks
-
 # Notes
 
 - **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you liked - for each thread one so to speak. This library is generally considered thread-safe.
+
 - **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memeory leakage.
+
 - You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. Right the contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times you do not need to close them until you are completely done with them (perhaps only at the very end of your program).
+
+# Benchmarks
 
 # License
 
