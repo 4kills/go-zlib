@@ -47,7 +47,7 @@ In order to use this library with your go source code, you must be able to use t
 If you are on **Linux** or **MacOS**, you are already good to go.
 
 If you are on **Windows**, you will need to install a GCC compiler. 
-I can recommand [tdm-gcc](https://jmeubank.github.io/tdm-gcc/) which is based
+I can recommend [tdm-gcc](https://jmeubank.github.io/tdm-gcc/) which is based
 off of WinGW. Please note that [cgo](https://golang.org/cmd/cgo/) requires the 64-bit version (as stated [here](https://github.com/golang/go/wiki/cgo#windows)). 
 
 ## Download and Installation
@@ -58,7 +58,7 @@ To get the most recent stable version just type:
 $ go get github.com/4kills/zlib
 ```
 
-You may also use go modules (available since go 1.11) to get the version of a specific branch or tag if you want to try out or use experimental features. But beware that these versions are not necessarily guaranteed to be stable or thoroughly tested.
+You may also use go modules (available since go 1.11) to get the version of a specific branch or tag if you want to try out or use experimental features. However, beware that these versions are not necessarily guaranteed to be stable or thoroughly tested.
 
 ## Import
 
@@ -122,14 +122,14 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 
 # Notes
 
-- **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you liked - for each thread one so to speak. This library is generally considered thread-safe.
+- **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you like - for each thread one, so to speak. This library is generally considered thread-safe.
 
-- **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memeory leakage.
+- **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memory leakage.
 
 - **`HuffmanOnly` does NOT work as with the standard library**. This is the only exception from the philosophy to make this library interchangeable with the standard library. If you want to use 
-`HuffmanOnly` refer to the `NewWriterLevelStrategy()` constructor function. However, your existing code won't break by leaving `HuffmanOnly` as argument to `NewWriterLevel()`, it will just use the default compression strategy and compression level 2.  
+`HuffmanOnly`, refer to the `NewWriterLevelStrategy()` constructor function. However, your existing code won't break by leaving `HuffmanOnly` as argument to `NewWriterLevel()`, it will just use the default compression strategy and compression level 2.  
 
-- You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. Right the contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times you do not need to close them until you are completely done with them (perhaps only at the very end of your program).
+- You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. The contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times, you do not need to close them until you are completely done with them (perhaps only at the very end of your program).
 
 # Benchmarks
 
