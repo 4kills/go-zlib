@@ -98,6 +98,13 @@ func NewReader(r io.Reader) (*Reader, error) {
 	return &Reader{r, c, &bytes.Buffer{}}, err
 }
 
+// NewReaderDict does exactly like NewReader as of NOW.
+// This will change once custom dicionaries are implemented.
+// This function has been added for compatability with the std lib.
+func NewReaderDict(r io.Reader, dict []byte) (*Reader, error) {
+	return NewReader(r)
+}
+
 // Resetter resets the zlib.Reader returned by NewReader by assigning a new underyling reader,
 // discarding any buffered data from the previous reader.
 // This interface is mainly for compatability with the std lib

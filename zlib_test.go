@@ -97,7 +97,7 @@ func TestReaderReset(t *testing.T) {
 	sliceEquals(t, shortString, out)
 
 	out = make([]byte, len(shortString))
-	r.Reset(bytes.NewBuffer(b))
+	r.Reset(bytes.NewBuffer(b), nil)
 	r.Read(out)
 	sliceEquals(t, shortString, out)
 }

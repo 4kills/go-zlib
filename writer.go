@@ -40,6 +40,20 @@ func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
 	return NewWriterLevelStrategy(w, level, DefaultStrategy)
 }
 
+// NewWriterLevelDict does exactly like NewWriterLevel as of NOW.
+// This will change once custom dicionaries are implemented.
+// This function has been added for compatability with the std lib.
+func NewWriterLevelDict(w io.Writer, level int, dict []byte) (*Writer, error) {
+	return NewWriterLevel(w, level)
+}
+
+// NewWriterLevelStrategyDict does exactly like NewWriterLevelStrategy as of NOW.
+// This will change once custom dicionaries are implemented.
+// This function has been added mainly for completeness' sake.
+func NewWriterLevelStrategyDict(w io.Writer, level, strategy int, dict []byte) (*Writer, error) {
+	return NewWriterLevelStrategy(w, level, strategy)
+}
+
 // NewWriterLevelStrategy performs like NewWriter but you may also specify the compression level and strategy.
 // w may be nil if you only plan on using WriteBytes.
 func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
