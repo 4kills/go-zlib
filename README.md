@@ -18,8 +18,10 @@ Native golang zlib implementation using cgo and the original zlib library writte
   - [Download and Installation](#download-and-installation)
   - [Import](#import)
 - [Usage](#usage)
-  - [sub3](#sub3)
-  - [sub4](#sub4)
+  - [Compress](#compress)
+  - [Decompress](#decompress)
+- [Benchmarks](#benchmarks)
+- [Notes](#notes)
 - [License](#license)
 - [Links](#links)
 
@@ -75,6 +77,52 @@ This library can be used exactly like the [go standard zlib library](https://gol
 
 ## Compress
 
+### Like with the standard library: 
+
+```go
+var b bytes.Buffer              // use any writer
+w := zlib.NewWriter(&b)         // create a new zlib.Writer, compressing to b
+defer w.Close()                 // don't forget to close this
+w.Write([]byte("uncompressed")) // put in any data as []byte  
+```
+
+### Or alternatively: 
+
+```go 
+w := zlib.NewWriter(nil)                     // requires no writer if WriteBytes is used
+defer w.Close()                              // always close when you are done with it
+c, _ := w.WriteBytes([]byte("uncompressed")) // compresses input & returns compressed []byte 
+```
+
+## Decompress
+
+### Like with the standard library: 
+
+```go
+b := bytes.NewBuffer(compressed) // reader with compressed data
+r, err := zlib.NewReader(&b)     // create a new zlib.Reader, decompressing from b 
+defer r.Close()                  // don't forget to close this either
+io.Copy(os.Stdout, r)            // read all the decompressed data and write it somewhere
+// or:
+// r.Read(someBuffer)            // can also be done directly
+```
+
+### Or alternatively: 
+
+```go 
+r := zlib.NewReader(nil)         // requires no reader if ReadBytes is used
+defer r.Close()                  // always close when you are done with it
+dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []byte 
+```
+
+# Benchmarks
+
+# Notes
+
+- **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you liked - for each thread one so to speak. This library is generally considered thread-safe.
+- **Always Close() your Reader / Writer when you are done with it** - especially if you create a new reader/writer for every compression/decompression you undertake (which is generally discouraged as well). As the C-part of this library is not subject to the go garbage-collector the memory allocated must be freed manually  
+
+# License
 
 # Links 
 
