@@ -42,7 +42,7 @@ func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
 
 // NewWriterLevelDict does exactly like NewWriterLevel as of NOW.
 // This will change once custom dicionaries are implemented.
-// This function has been added for compatability with the std lib.
+// This function has been added for compatibility with the std lib.
 func NewWriterLevelDict(w io.Writer, level int, dict []byte) (*Writer, error) {
 	return NewWriterLevel(w, level)
 }
@@ -119,7 +119,7 @@ func (zw *Writer) Close() error {
 }
 
 // Flush does NOTHING. Write always flushes content to the underlying writer.
-// This method just exists for easy interchangability with the go std zlib library
+// This method just exists for easy interchangeability with the go std zlib library
 func (zw *Writer) Flush() error {
 	if err := checkClosed(zw.compressor); err != nil {
 		return err
