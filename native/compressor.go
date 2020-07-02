@@ -4,7 +4,7 @@ package native
 #cgo CFLAGS: -I/zlib/
 #cgo LDFLAGS: ${SRCDIR}/libs/libz.a
 
-#include "zlib/zlib.h"
+#include "zlib.h"
 
 // I have no idea why I have to wrap just this function but otherwise cgo won't compile
 int defInit2(z_stream* s, int lvl, int method, int windowBits, int memLevel, int strategy) {
