@@ -50,7 +50,7 @@ func determineError(parent error, errCode C.int) error {
 	case C.Z_MEM_ERROR:
 		err = errMem
 	case C.Z_VERSION_ERROR:
-		err = errMem
+		err = errVersion
 	default:
 		err = errUnknown
 	}
