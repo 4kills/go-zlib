@@ -1,3 +1,7 @@
+```diff
+-THIS ALPHA-PRE-RELEASE ONLY WORKS RELIABLY ON WINDOWS AS OF NOW
+```
+
 # **zlib** for go
 
 <a href="https://choosealicense.com/licenses/zlib/">
