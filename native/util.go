@@ -1,7 +1,7 @@
 package native
 
 /*
-#cgo CFLAGS: -I/zlib/
+#cgo CFLAGS: -I${SRCDIR}/zlib/
 #cgo windows LDFLAGS: ${SRCDIR}/libs/winlibz.a
 #cgo linux LDFLAGS: ${SRCDIR}/libs/linuxlibz.a
 
