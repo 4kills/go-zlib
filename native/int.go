@@ -1,9 +1,6 @@
 package native
 
 /* #include <stdint.h>
-int getSizeOfLong() {
-	return sizeof(long);
-}
 
 int64_t convert(long long integer) {
 	return (int64_t) integer;
