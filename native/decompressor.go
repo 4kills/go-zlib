@@ -2,7 +2,7 @@ package native
 
 /*
 #cgo CFLAGS: -I/zlib/
-#cgo LDFLAGS: ${SRCDIR}/libs/libz.a
+#cgo windows LDFLAGS: ${SRCDIR}/libs/winlibz.a
 
 #include "zlib.h"
 
