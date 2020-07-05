@@ -54,10 +54,10 @@ func newProcessor() processor {
 func (p *processor) prepare(inPtr uintptr, inSize int, outPtr uintptr, outSize int) {
 	C.prepare(
 		p.s,
-		C.longlong(inPtr),
-		C.longlong(inSize),
-		C.longlong(outPtr),
-		C.longlong(outSize),
+		toInt64(int64(inPtr)),
+		intToInt64(inSize),
+		toInt64(int64(outPtr)),
+		intToInt64(outSize),
 	)
 }
 
@@ -96,8 +96,8 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 			return inIdx, buf, determineError(errProcess, ok)
 		}
 
-		inIdx += int(C.getProcessed(p.s, C.longlong(readLen)))
-		outIdx += int(C.getCompressed(p.s, C.longlong(writeLen)))
+		inIdx += int(C.getProcessed(p.s, intToInt64(readLen)))
+		outIdx += int(C.getCompressed(p.s, intToInt64(writeLen)))
 		buf = buf[:outIdx]
 	}
 
