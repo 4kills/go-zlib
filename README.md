@@ -44,11 +44,13 @@ With this library you may also choose from different `compression strategies` on
 
 In order to use this library with your go source code, you must be able to use the go tool [cgo](https://golang.org/cmd/cgo/), which in turn requires a GCC compiler.
 
-If you are on **Linux** or **MacOS**, you are already good to go.
+If you are on **Linux**, there is a good chance you already have GCC installed, otherwise just get it with your favorite package manager.
 
-If you are on **Windows**, you will need to install a GCC compiler. 
+If you are on **MacOS**, Xcode - for instance - supplies the required tools.
+
+If you are on **Windows**, you will need to install a GNU environment.
 I can recommend [tdm-gcc](https://jmeubank.github.io/tdm-gcc/) which is based
-off of WinGW. Please note that [cgo](https://golang.org/cmd/cgo/) requires the 64-bit version (as stated [here](https://github.com/golang/go/wiki/cgo#windows)). 
+off of MinGW. Please note that [cgo](https://golang.org/cmd/cgo/) requires the 64-bit version (as stated [here](https://github.com/golang/go/wiki/cgo#windows)). 
 
 ## Download and Installation
 
