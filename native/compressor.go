@@ -1,11 +1,6 @@
 package native
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/zlib/
-#cgo windows LDFLAGS: ${SRCDIR}/libs/winlibz.a
-#cgo linux LDFLAGS: ${SRCDIR}/libs/linuxlibz.a
-#cgo darwin LDFLAGS: ${SRCDIR}/libs/darwinlibz.a
-
 #include "zlib.h"
 
 // I have no idea why I have to wrap just this function but otherwise cgo won't compile
