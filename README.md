@@ -6,13 +6,11 @@
 
 This ultra fast **go zlib library** wraps the original zlib library written in C by Jean-loup Gailly and Mark Adler using cgo. 
 
-**It offers considerable performance benefits compared to the standard go zlib library** - especially on older and lower-end hardware, as the [benchmarks](#benchmarks) show.
+**It offers considerable performance benefits compared to the standard go zlib library**, as the [benchmarks](#benchmarks) show.
 
 This library is designed to be completely and easily interchangeable with the go standard zlib library. <ins>You won't have to rewrite or modify a single line of code!</ins> Checking if this library works for you is as easy as changing [imports](#import)!
 
 This library also offers <ins>blazing fast convenience methods</ins> that can be used as a clean, alternative interface to that provided by the go standard library. (See [usage](#usage)).
-
-With this library you may also choose from different `compression strategies` on top of different `compression levels`. 
 
 ## Table of Contents
 
