@@ -133,6 +133,11 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 
 # Benchmarks
 
+![compression relative](https://i.imgur.com/dK6i9Ij.png)
+![dcompression relative](https://i.imgur.com/UQ7dKpA.png)
+![compression total](https://i.imgur.com/CPjYJQQ.png)
+![decompression total](https://i.imgur.com/Ef3xM6Q.png)
+
 # License
 
 ```txt
