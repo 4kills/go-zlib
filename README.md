@@ -153,7 +153,7 @@ This chart shows how long it took for the methods of this library (blue) and the
 
 ![compression relative](https://i.imgur.com/dK6i9Ij.png)
 
-This chart shows the time it took for this library's Write (blue) to compress the data in nanoseconds, as well as the time it took for the standard library's Write (WriteStd, yellow) to compress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library is. 
+This chart shows the time it took for this library's `Write` (blue) to compress the data in nanoseconds, as well as the time it took for the standard library's `Write` (WriteStd, yellow) to compress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library is. 
 
 For example: This library only needed ~88% of the time required by the standard library to compress the packets on an Intel Core i5-6600K on Windows. 
 That makes the standard library **~13.6% slower** than this library. 
@@ -166,7 +166,7 @@ This chart shows how long it took for the methods of this library (blue) and the
 
 ![dcompression relative](https://i.imgur.com/UQ7dKpA.png)
 
-This chart shows the time it took for this library's Read (blue) to decompress the data in nanoseconds, as well as the time it took for the standard library's Read (ReadStd, Yellow) to decompress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library is. 
+This chart shows the time it took for this library's `Read` (blue) to decompress the data in nanoseconds, as well as the time it took for the standard library's `Read` (ReadStd, Yellow) to decompress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library is. 
 
 For example: This library only needed a whopping ~65% of the time required by the standard library to decompress the packets on an Intel Core i5-6600K on Windows. 
 That makes the standard library a substantial **~53.8% slower** than this library.
