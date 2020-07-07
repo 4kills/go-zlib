@@ -141,7 +141,7 @@ As the zlib standard has been traditionally used for compressing smaller chunks 
 To that end, I have recorded 930 individual Minecraft packets, totalling 11,445,993 bytes in umcompressed data and 1,564,159 bytes in compressed data.
 Those packets represent actual client-server communication and were recorded using [this](https://github.com/haveachin/infrared) software.
 
-The benchmarks were executed on different hardware and operating systems, including AMD and Intel processors as well as all the supported operating systems (Windows, Linux, MacOS). All of the benchmarked functions/methods were executed hundreds of times and the numbers you are about to see are the averages over all these executions.
+The benchmarks were executed on different hardware and operating systems, including AMD and Intel processors, as well as all the supported operating systems (Windows, Linux, MacOS). All of the benchmarked functions/methods were executed hundreds of times and the numbers you are about to see are the averages over all these executions.
 
 These benchmarks compare this library (blue) to the go standard library (yellow) and show that this library performs better in all cases. 
 
@@ -149,11 +149,11 @@ These benchmarks compare this library (blue) to the go standard library (yellow)
 
 ![compression total](https://i.imgur.com/CPjYJQQ.png)
 
-This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to compress **all** of the 930 packets (~11.5MB) in nanoseconds on different systems. Note that the two right most data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to perform generally better than Windows.
+This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to compress **all** of the 930 packets (~11.5MB) on different systems in nanoseconds. Note that the two right most data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to perform generally better than Windows.
 
 ![compression relative](https://i.imgur.com/dK6i9Ij.png)
 
-This chart shows the time it took for this library's Write to compress the data in nanoseconds in blue as well as the time it took for the standard library's Write (WriteStd) to compress the data in nanoseconds in yellow. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library was. 
+This chart shows the time it took for this library's Write (blue) to compress the data in nanoseconds, as well as the time it took for the standard library's Write (WriteStd, yellow) to compress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library was. 
 
 For example: This library only needed ~88% of the time needed by the standard library to compress the packets on an Intel Core i5-6600K on Windows. 
 That makes the standard library **~13.6% slower** than this library. 
@@ -162,11 +162,11 @@ That makes the standard library **~13.6% slower** than this library.
 
 ![compression total](https://i.imgur.com/Ef3xM6Q.png)
 
-This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to decompress **all** of the 930 packets (~1.5MB) in nanoseconds on different systems. Note that the two right most data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to perform generally better than Windows.
+This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to decompress **all** of the 930 packets (~1.5MB) on different systems in nanoseconds. Note that the two right most data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to perform generally better than Windows.
 
 ![dcompression relative](https://i.imgur.com/UQ7dKpA.png)
 
-This chart shows the time it took for this library's Read to decompress the data in nanoseconds in blue as well as the time it took for the standard library's Read (ReadStd) to decompress the data in nanoseconds in yellow. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library was. 
+This chart shows the time it took for this library's Read (blue) to decompress the data in nanoseconds, as well as the time it took for the standard library's Read (ReadStd, Yellow) to decompress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library was. 
 
 For example: This library only needed whopping ~65% of the time needed by the standard library to decompress the packets on an Intel Core i5-6600K on Windows. 
 That makes the standard library massive **~53.8% slower** than this library.
