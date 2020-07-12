@@ -6,13 +6,11 @@
 
 This ultra fast **go zlib library** wraps the original zlib library written in C by Jean-loup Gailly and Mark Adler using cgo. 
 
-**It offers considerable performance benefits compared to the standard go zlib library** - especially on older and lower-end hardware, as the [benchmarks](#benchmarks) show.
+**It offers considerable performance benefits compared to the standard go zlib library**, as the [benchmarks](#benchmarks) show.
 
 This library is designed to be completely and easily interchangeable with the go standard zlib library. <ins>You won't have to rewrite or modify a single line of code!</ins> Checking if this library works for you is as easy as changing [imports](#import)!
 
 This library also offers <ins>blazing fast convenience methods</ins> that can be used as a clean, alternative interface to that provided by the go standard library. (See [usage](#usage)).
-
-With this library you may also choose from different `compression strategies` on top of different `compression levels`. 
 
 ## Table of Contents
 
@@ -26,6 +24,8 @@ With this library you may also choose from different `compression strategies` on
   - [Decompress](#decompress)
 - [Notes](#notes)
 - [Benchmarks](#benchmarks)
+  - [Compression](#compression)
+  - [Decompression](#decompression)
 - [License](#license)
 - [Links](#links)
 
@@ -134,6 +134,42 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 - You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. The contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times, you do not need to close them until you are completely done with them (perhaps only at the very end of your program).
 
 # Benchmarks
+
+These benchmarks were conducted with "real-life-type data" to ensure that these tests are most representative for an actual use case in a practical production environment.
+As the zlib standard has been traditionally used for compressing smaller chunks of data, I have decided to follow suite by opting for Minecraft client-server communication packets, as they represent the optimal use case for this library. 
+
+To that end, I have recorded 930 individual Minecraft packets, totalling 11,445,993 bytes in umcompressed data and 1,564,159 bytes in compressed data.
+These packets represent actual client-server communication and were recorded using [this](https://github.com/haveachin/infrared) software.
+
+The benchmarks were executed on different hardware and operating systems, including AMD and Intel processors, as well as all the supported operating systems (Windows, Linux, MacOS). All of the benchmarked functions/methods were executed hundreds of times and the numbers you are about to see are the averages over all these executions.
+
+These benchmarks compare this library (blue) to the go standard library (yellow) and show that this library performs better in all cases. 
+
+## Compression
+
+![compression total](https://i.imgur.com/CPjYJQQ.png)
+
+This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to compress **all** of the 930 packets (~11.5MB) on different systems in nanoseconds. Note that the two rightmost data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to generally perform better than Windows.
+
+![compression relative](https://i.imgur.com/dK6i9Ij.png)
+
+This chart shows the time it took for this library's `Write` (blue) to compress the data in nanoseconds, as well as the time it took for the standard library's `Write` (WriteStd, yellow) to compress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library is. 
+
+For example: This library only needed ~88% of the time required by the standard library to compress the packets on an Intel Core i5-6600K on Windows. 
+That makes the standard library **~13.6% slower** than this library. 
+
+## Decompression
+
+![compression total](https://i.imgur.com/Ef3xM6Q.png)
+
+This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to decompress **all** of the 930 packets (~1.5MB) on different systems in nanoseconds. Note that the two rightmost data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to generally perform better than Windows.
+
+![dcompression relative](https://i.imgur.com/UQ7dKpA.png)
+
+This chart shows the time it took for this library's `Read` (blue) to decompress the data in nanoseconds, as well as the time it took for the standard library's `Read` (ReadStd, Yellow) to decompress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library is. 
+
+For example: This library only needed a whopping ~65% of the time required by the standard library to decompress the packets on an Intel Core i5-6600K on Windows. 
+That makes the standard library a substantial **~53.8% slower** than this library.
 
 # License
 
