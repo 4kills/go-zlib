@@ -18,7 +18,6 @@ const decompressedMcPacketsLoc = "https://raw.githubusercontent.com/4kills/zlib_
 var decompressedMcPackets [][]byte
 
 func BenchmarkWriteBytesAllMcPacketsDefault(b *testing.B) {
-	b.StopTimer()
 	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
 
 	benchmarkWriteBytesMcPacketsGeneric(decompressedMcPackets, b)
@@ -28,9 +27,9 @@ func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 	w := NewWriter(nil)
 	defer w.Close()
 
-	reportBytesPerChunk(input, b)
+	b.ResetTimer()
 
-	b.StartTimer()
+	reportBytesPerChunk(input, b)
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
@@ -40,7 +39,6 @@ func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 }
 
 func BenchmarkWriteAllMcPacketsDefault(b *testing.B) {
-	b.StopTimer()
 	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
 	w := NewWriter(&bytes.Buffer{})
 
@@ -48,7 +46,6 @@ func BenchmarkWriteAllMcPacketsDefault(b *testing.B) {
 }
 
 func BenchmarkWriteAllMcPacketsDefaultStd(b *testing.B) {
-	b.StopTimer()
 	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
 	w := zlib.NewWriter(&bytes.Buffer{})
 
@@ -57,9 +54,10 @@ func BenchmarkWriteAllMcPacketsDefaultStd(b *testing.B) {
 
 func benchmarkWriteMcPacketsGeneric(w TestWriter, input [][]byte, b *testing.B) {
 	defer w.Close()
-	reportBytesPerChunk(input, b)
 
-	b.StartTimer()
+	b.ResetTimer()
+
+	reportBytesPerChunk(input, b)
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
@@ -162,50 +160,6 @@ func benchmarkWriteLevel(input []byte, level int, b *testing.B) {
 	benchmarkWriteLevelGeneric(w, buf, input, b)
 }
 
-func BenchmarkWrite64BBestCompressionStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(64), BestCompression, b)
-}
-
-func BenchmarkWrite8192BBestCompressionStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(8192), BestCompression, b)
-}
-
-func BenchmarkWrite65536BBestCompressionStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(65536), BestCompression, b)
-}
-
-func BenchmarkWrite64BBestSpeedStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(64), BestSpeed, b)
-}
-
-func BenchmarkWrite8192BBestSpeedStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(8192), BestSpeed, b)
-}
-
-func BenchmarkWrite65536BBestSpeedStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(65536), BestSpeed, b)
-}
-
-func BenchmarkWrite64BDefaultStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(64), DefaultCompression, b)
-}
-
-func BenchmarkWrite8192BDefaultStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(8192), DefaultCompression, b)
-}
-
-func BenchmarkWrite65536BDefaultStd(b *testing.B) {
-	benchmarkWriteLevelStd(xByte(65536), DefaultCompression, b)
-}
-
-// std library zlib in comparison
-func benchmarkWriteLevelStd(input []byte, level int, b *testing.B) {
-	buf := bytes.NewBuffer(make([]byte, 0, len(input)))
-	w, _ := NewWriterLevel(buf, level)
-
-	benchmarkWriteLevelGeneric(w, buf, input, b)
-}
-
 func benchmarkWriteLevelGeneric(w TestWriter, buf *bytes.Buffer, input []byte, b *testing.B) {
 	defer w.Close()
 
@@ -229,11 +183,13 @@ type TestWriter interface {
 }
 
 func reportBytesPerChunk(input [][]byte, b *testing.B) {
+	b.StopTimer()
 	numOfBytes := 0
 	for _, v := range input {
 		numOfBytes += len(v)
 	}
 	b.ReportMetric(float64(numOfBytes), "bytes/chunk")
+	b.StartTimer()
 }
 
 func loadPacketsIfNil(packets *[][]byte, loc string) {

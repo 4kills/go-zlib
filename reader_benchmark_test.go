@@ -14,7 +14,6 @@ const compressedMcPacketsLoc = "https://raw.githubusercontent.com/4kills/zlib_be
 var compressedMcPackets [][]byte
 
 func BenchmarkReadBytesAllMcPacketsDefault(b *testing.B) {
-	b.StopTimer()
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
 
 	benchmarkReadBytesMcPacketsGeneric(compressedMcPackets, b)
@@ -24,9 +23,10 @@ func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 	r, _ := NewReader(bytes.NewBuffer(compressedMcPackets[0]))
 	defer r.Close()
 
+	b.ResetTimer()
+
 	reportBytesPerChunk(input, b)
 
-	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
 			r.ReadBytes(v)
@@ -35,7 +35,6 @@ func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 }
 
 func BenchmarkReadAllMcPacketsDefault(b *testing.B) {
-	b.StopTimer()
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
 	buf := &bytes.Buffer{}
 	r, _ := NewReader(buf)
@@ -44,10 +43,7 @@ func BenchmarkReadAllMcPacketsDefault(b *testing.B) {
 }
 
 func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
-	b.StopTimer()
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
-
-	reportBytesPerChunk(compressedMcPackets, b)
 
 	buf := bytes.NewBuffer(compressedMcPackets[0]) // the std library needs this or else I can't create a reader
 	r, _ := zlib.NewReader(buf)
@@ -55,7 +51,9 @@ func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
 
 	decompressed := make([]byte, 300000)
 
-	b.StartTimer()
+	b.ResetTimer()
+
+	reportBytesPerChunk(compressedMcPackets, b)
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range compressedMcPackets {
@@ -70,13 +68,12 @@ func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
 }
 
 func benchmarkReadMcPacketsGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, input [][]byte, b *testing.B) {
-	reportBytesPerChunk(input, b)
-
 	defer r.Close()
-
 	out := make([]byte, 300000)
 
-	b.StartTimer()
+	b.ResetTimer()
+
+	reportBytesPerChunk(input, b)
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
@@ -125,7 +122,6 @@ func BenchmarkReadBytes65536BDefault(b *testing.B) {
 }
 
 func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
-	b.StopTimer()
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
@@ -133,7 +129,8 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 
 	r, _ := NewReader(nil)
 	defer r.Close()
-	b.StartTimer()
+
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		r.ReadBytes(compressed)
@@ -183,7 +180,6 @@ func benchmarkReadLevel(input []byte, level int, b *testing.B) {
 }
 
 func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, input []byte, level int, b *testing.B) {
-	b.StopTimer()
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
@@ -192,7 +188,8 @@ func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, 
 	defer r.Close()
 
 	decompressed := make([]byte, len(input))
-	b.StartTimer()
+
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		underlyingReader.Write(compressed) // requires some time but only very little compared to the benchmarked method r.Read
