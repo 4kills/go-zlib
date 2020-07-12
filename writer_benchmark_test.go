@@ -18,6 +18,7 @@ const decompressedMcPacketsLoc = "https://raw.githubusercontent.com/4kills/zlib_
 var decompressedMcPackets [][]byte
 
 func BenchmarkWriteBytesAllMcPacketsDefault(b *testing.B) {
+	b.StopTimer()
 	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
 
 	benchmarkWriteBytesMcPacketsGeneric(decompressedMcPackets, b)
@@ -29,6 +30,8 @@ func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 
 	reportBytesPerChunk(input, b)
 
+	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
 			w.WriteBytes(v)
@@ -37,6 +40,7 @@ func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 }
 
 func BenchmarkWriteAllMcPacketsDefault(b *testing.B) {
+	b.StopTimer()
 	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
 	w := NewWriter(&bytes.Buffer{})
 
@@ -44,6 +48,7 @@ func BenchmarkWriteAllMcPacketsDefault(b *testing.B) {
 }
 
 func BenchmarkWriteAllMcPacketsDefaultStd(b *testing.B) {
+	b.StopTimer()
 	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
 	w := zlib.NewWriter(&bytes.Buffer{})
 
@@ -51,9 +56,10 @@ func BenchmarkWriteAllMcPacketsDefaultStd(b *testing.B) {
 }
 
 func benchmarkWriteMcPacketsGeneric(w TestWriter, input [][]byte, b *testing.B) {
+	defer w.Close()
 	reportBytesPerChunk(input, b)
 
-	defer w.Close()
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
