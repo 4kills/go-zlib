@@ -145,6 +145,14 @@ The benchmarks were executed on different hardware and operating systems, includ
 
 These benchmarks compare this library (blue) to the go standard library (yellow) and show that this library performs better in all cases. 
 
+<details>
+  
+  <summary> (A note regarding testing on your machine) </summary>
+  
+  Please note that you will need an Internet connection for some of the benchmarks to function. This is because these benchmarks will download the mc packets from [here](https://github.com/4kills/zlib_benchmark) and temporarily store them in memory for the duration of the benchmark tests, so this repository won't have to include the data in order save space on your machine and to make it a lightweight library.
+  
+</details>
+
 ## Compression
 
 ![compression total](https://i.imgur.com/CPjYJQQ.png)
