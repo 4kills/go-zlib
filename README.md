@@ -131,7 +131,10 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 - **`HuffmanOnly` does NOT work as with the standard library**. This is the only exception from the philosophy to make this library interchangeable with the standard library. If you want to use 
 `HuffmanOnly`, refer to the `NewWriterLevelStrategy()` constructor function. However, your existing code won't break by leaving `HuffmanOnly` as argument to `NewWriterLevel()`, it will just use the default compression strategy and compression level 2.  
 
-- You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. The contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times, you do not need to close them until you are completely done with them (perhaps only at the very end of your program).
+- Memory Usage: `Compressing` requires ~256KiB of additional memory during execution, while `Decompressing` requires ~39 KiB of additional memory during execution. 
+So if you have 8 simultaneous `WriteBytes` working from 8 Writers across 8 threads, your memory footprint from that alone will be about ~2MiByte.
+
+- You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. The contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times, you do not need to close them until you are completely done with them (perhaps only at the very end of your program).  
 
 # Benchmarks
 
