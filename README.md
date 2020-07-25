@@ -37,6 +37,7 @@ This library also offers <ins>blazing fast convenience methods</ins> that can be
 - [x] Alternative, super fast convenience methods for compression / decompression
 - [x] Benchmarks with comparisons to the go standard zlib library
 - [ ] Custom, user-defined dictionaries
+- [ ] More customizable memory management 
 
 # Installation
 
