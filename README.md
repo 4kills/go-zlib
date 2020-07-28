@@ -12,6 +12,8 @@ This library is designed to be completely and easily interchangeable with the go
 
 This library also offers <ins>blazing fast convenience methods</ins> that can be used as a clean, alternative interface to that provided by the go standard library. (See [usage](#usage)).
 
+**WARNING:** As of now, this library does not support streaming and can thus only compress as many bytes as fit into a single buffer (~2GB) in one go (no pun intended). 
+
 ## Table of Contents
 
 - [Features](#features)
