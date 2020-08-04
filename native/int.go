@@ -2,7 +2,7 @@ package native
 
 /* #include <stdint.h>
 
-int64_t convert(long long integer) {
+static int64_t convert(long long integer) {
 	return (int64_t) integer;
 }
 */
