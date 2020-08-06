@@ -79,3 +79,16 @@ func (c *Compressor) Compress(in []byte) ([]byte, error) {
 	)
 	return b, err
 }
+
+func (c *Compressor) CompressStream(in []byte) ([]byte, error) {
+	zlibProcess := func() C.int {
+		return C.deflate(c.p.s, C.Z_NO_FLUSH)
+	}
+
+	_, b, err := c.p.processStream(
+		in,
+		make([]byte, 0, len(in)/assumedCompressionFactor),
+		zlibProcess,
+		)
+	return b, err
+}

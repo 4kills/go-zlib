@@ -48,6 +48,8 @@ func determineError(parent error, errCode C.int) error {
 		err = errMem
 	case C.Z_VERSION_ERROR:
 		err = errVersion
+	case C.Z_BUF_ERROR:
+		err = errBuf
 	default:
 		err = errUnknown
 	}
