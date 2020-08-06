@@ -24,7 +24,6 @@ func TestWrite(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 	r, err := zlib.NewReader(b)
 	if err != nil {
 		t.Error(err)

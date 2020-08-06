@@ -82,7 +82,7 @@ func (c *Compressor) Compress(in []byte) ([]byte, error) {
 
 func (c *Compressor) CompressStream(in []byte) ([]byte, error) {
 	zlibProcess := func() C.int {
-		return C.deflate(c.p.s, C.Z_NO_FLUSH)
+		return C.deflate(c.p.s, C.Z_SYNC_FLUSH)
 	}
 
 	_, b, err := c.p.processStream(
