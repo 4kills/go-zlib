@@ -70,6 +70,7 @@ func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 }
 
 // WriteBytes takes uncompressed data p, compresses it and returns it as new byte slice.
+// Use this for whole-buffered, in-memory data.
 func (zw *Writer) WriteBytes(p []byte) ([]byte, error) {
 	if len(p) == 0 {
 		return nil, errNoInput
@@ -126,7 +127,7 @@ func (zw *Writer) Close() error {
 	return err
 }
 
-// Flush writes buffered data to the underlying writer.
+// Flush writes compressed buffered data to the underlying writer.
 func (zw *Writer) Flush() error {
 	if err := checkClosed(zw.compressor); err != nil {
 		return err
