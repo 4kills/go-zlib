@@ -92,7 +92,7 @@ func (zw *Writer) Write(p []byte) (int, error) {
 		return -1, err
 	}
 
-	out, err := zw.compressor.Compress(p)
+	out, err := zw.compressor.CompressStream(p)
 	if err != nil {
 		return 0, err
 	}

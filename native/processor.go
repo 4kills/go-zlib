@@ -35,6 +35,45 @@ func (p *processor) close() {
 	p.isClosed = true
 }
 
+func (p *processor) processStream(in []byte, buf []byte, zlibProcess func() C.int) (int, []byte, error) {
+	inMem := &in[0]
+	inIdx := 0
+	p.readable = len(in) - inIdx
+
+	outIdx := 0
+
+	for {
+		buf = grow(buf, minWritable)
+
+		outMem := startMemAddress(buf)
+
+		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
+		readLen := len(in) - inIdx
+		p.readable = readLen
+		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
+		writeLen := cap(buf) - outIdx
+
+		p.prepare(readMem, readLen, writeMem, writeLen)
+
+		ok := zlibProcess()
+		switch ok {
+		case C.Z_OK:
+		default:
+			return inIdx, buf, determineError(errProcess, ok)
+		}
+
+		inIdx += int(C.getProcessed(p.s, intToInt64(readLen)))
+		outIdx += int(C.getCompressed(p.s, intToInt64(writeLen)))
+		buf = buf[:outIdx]
+
+		if int64(C.getCompressed(p.s, 0)) != 0 {
+			break
+		}
+	}
+
+	return inIdx, buf, nil
+}
+
 func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) (int, []byte, error) {
 	inMem := &in[0]
 	inIdx := 0

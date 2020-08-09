@@ -2,6 +2,7 @@ package zlib
 
 import (
 	"bytes"
+	"compress/zlib"
 	"io"
 	"testing"
 )
@@ -10,6 +11,33 @@ const repeatCount = 30
 
 var shortString = []byte("hello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\n")
 var longString []byte
+
+func TestWrite(t *testing.T) {
+	b := &bytes.Buffer{}
+	w := NewWriter(b)
+
+	_, err := w.Write(shortString)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = w.Write(shortString)
+	if err != nil {
+		t.Error(err)
+	}
+	r, err := zlib.NewReader(b)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(b.Bytes())
+
+	act := &bytes.Buffer{}
+	_, err = io.Copy(act, r)
+	if err != nil {
+		t.Error(err)
+	}
+	sliceEquals(t, append(shortString, shortString...), act.Bytes())
+}
 
 // primarly checks properly working EOF conditions of Read
 func TestWrite_ReadReadFull_wShortString(t *testing.T) {
@@ -267,7 +295,7 @@ func testWrite(input []byte, t *testing.T) *bytes.Buffer {
 	w := NewWriter(&b)
 	defer w.Close()
 
-	_, err := w.Write(shortString)
+	_, err := w.Write(input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -294,6 +322,7 @@ func sliceEquals(t *testing.T, expected, actual []byte) {
 	for i, v := range expected {
 		if v != actual[i] {
 			t.Errorf("slices differ at index %d: want %d; got %d", i, v, actual[i])
+			t.FailNow()
 		}
 	}
 }
