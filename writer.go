@@ -123,6 +123,10 @@ func (zw *Writer) Close() error {
 		return err
 	}
 
+	if zw.w == nil {
+		return err
+	}
+
 	_, err = zw.w.Write(b)
 	return err
 }
@@ -150,6 +154,11 @@ func (zw *Writer) Reset(w io.Writer) {
 	b, err := zw.compressor.Reset()
 	if err != nil {
 		panic(err)
+	}
+
+	if zw.w == nil {
+		zw.w = w
+		return
 	}
 
 	if _, err := zw.w.Write(b); err != nil {
