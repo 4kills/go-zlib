@@ -82,7 +82,9 @@ func (zw *Writer) WriteBytes(p []byte) ([]byte, error) {
 }
 
 // Write compresses the given data p and writes it to the underlying io.Writer.
-// It returns the number of *compressed* bytes written to the underlying io.Writer.
+// The data is not necessarily written to the underlying writer, if no Flush is called.
+// It returns the number of *uncompressed* bytes written to the underlying io.Writer in case of err = nil,
+// or the number of *compressed* bytes in case of err != nil.
 // Please consider using WriteBytes as it might be more convenient for your use case.
 func (zw *Writer) Write(p []byte) (int, error) {
 	if len(p) == 0 {
@@ -105,7 +107,7 @@ func (zw *Writer) Write(p []byte) (int, error) {
 		}
 		n += inc
 	}
-	return len(out), nil
+	return len(p), nil
 }
 
 // Close closes the writer by flushing any unwritten data to the underlying writer.
@@ -115,23 +117,41 @@ func (zw *Writer) Close() error {
 		return err
 	}
 
-	return zw.compressor.Close()
+	b, err := zw.compressor.Close()
+	if err != nil {
+		return err
+	}
+
+	_, err = zw.w.Write(b)
+	return err
 }
 
-// Flush does NOTHING. Write always flushes content to the underlying writer.
-// This method just exists for easy interchangeability with the go std zlib library
+// Flush writes buffered data to the underlying writer.
 func (zw *Writer) Flush() error {
 	if err := checkClosed(zw.compressor); err != nil {
 		return err
 	}
-	return nil
+	b, _ := zw.compressor.Flush()
+	_, err := zw.w.Write(b)
+	return err
 }
 
-// Reset resets the Writer to the state of being initialized with zlib.NewX(..),
+// Reset flushes the buffered data to the current underyling writer,
+// resets the Writer to the state of being initialized with zlib.NewX(..),
 // but with the new underlying writer instead.
-// This will panic if the writer has already been closed
+// This will panic if the writer has already been closed, writer could not be reset or could not write to current
+// underlying writer.
 func (zw *Writer) Reset(w io.Writer) {
 	if err := checkClosed(zw.compressor); err != nil {
+		panic(err)
+	}
+
+	b, err := zw.compressor.Reset()
+	if err != nil {
+		panic(err)
+	}
+
+	if _, err := zw.w.Write(b); err != nil {
 		panic(err)
 	}
 

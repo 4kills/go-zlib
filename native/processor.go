@@ -36,7 +36,7 @@ func (p *processor) close() {
 }
 
 func (p *processor) processStream(in []byte, buf []byte, zlibProcess func() C.int) (int, []byte, error) {
-	inMem := &in[0]
+	inMem := startMemAddress(in)
 	inIdx := 0
 	p.readable = len(in) - inIdx
 
@@ -75,7 +75,7 @@ func (p *processor) processStream(in []byte, buf []byte, zlibProcess func() C.in
 }
 
 func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) (int, []byte, error) {
-	inMem := &in[0]
+	inMem := startMemAddress(in)
 	inIdx := 0
 	p.readable = len(in) - inIdx
 
