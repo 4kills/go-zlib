@@ -46,7 +46,21 @@ func NewCompressorStrategy(lvl, strat int) (*Compressor, error) {
 
 // Close closes the underlying zlib stream and frees the allocated memory
 func (c *Compressor) Close() ([]byte, error) {
-	b, err := c.Compress([]byte{})
+	condition := func() bool {
+		return !c.p.hasCompleted
+	}
+
+	zlibProcess := func() C.int {
+		return C.deflate(c.p.s, C.Z_FINISH)
+	}
+
+	_, b, err := c.p.process(
+		[]byte{},
+		[]byte{},
+		condition,
+		zlibProcess,
+		func() C.int {return 0},
+	)
 
 	ok := C.deflateEnd(c.p.s)
 
@@ -91,11 +105,36 @@ func (c *Compressor) CompressStream(in []byte) ([]byte, error) {
 		return C.deflate(c.p.s, C.Z_NO_FLUSH)
 	}
 
-	_, b, err := c.p.processStream(
+	condition := func() bool {
+		return c.p.getCompressed() == 0
+	}
+
+	_, b, err := c.p.process(
 		in,
 		make([]byte, 0, len(in)/assumedCompressionFactor),
+		condition,
 		zlibProcess,
-		)
+		func() C.int { return 0 },
+	)
+	return b, err
+}
+
+func (c *Compressor) Flush() ([]byte, error) {
+	zlibProcess := func() C.int {
+		return C.deflate(c.p.s, C.Z_SYNC_FLUSH)
+	}
+
+	condition := func() bool {
+		return c.p.getCompressed() == 0
+	}
+
+	_, b, err := c.p.process(
+		make([]byte, 0, 1),
+		make([]byte, 0, 1),
+		condition,
+		zlibProcess,
+		func() C.int { return 0 },
+	)
 	return b, err
 }
 
@@ -107,17 +146,3 @@ func (c *Compressor) Reset() ([]byte, error) {
 
 	return b, err
 }
-
-func (c *Compressor) Flush() ([]byte, error) {
-	zlibProcess := func() C.int {
-		return C.deflate(c.p.s, C.Z_SYNC_FLUSH)
-	}
-
-	_, b, err := c.p.processStream(
-		make([]byte, 0),
-		make([]byte, 0, 1),
-		zlibProcess,
-	)
-	return b, err
-}
-

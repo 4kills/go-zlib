@@ -29,49 +29,14 @@ func (p *processor) prepare(inPtr uintptr, inSize int, outPtr uintptr, outSize i
 	)
 }
 
+func (p *processor) getCompressed() int64 {
+	return int64(C.getCompressed(p.s, 0))
+}
+
 func (p *processor) close() {
 	C.freeMem(p.s)
 	p.s = nil
 	p.isClosed = true
-}
-
-func (p *processor) processStream(in []byte, buf []byte, zlibProcess func() C.int) (int, []byte, error) {
-	inMem := startMemAddress(in)
-	inIdx := 0
-	p.readable = len(in) - inIdx
-
-	outIdx := 0
-
-	for {
-		buf = grow(buf, minWritable)
-
-		outMem := startMemAddress(buf)
-
-		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
-		readLen := len(in) - inIdx
-		p.readable = readLen
-		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
-		writeLen := cap(buf) - outIdx
-
-		p.prepare(readMem, readLen, writeMem, writeLen)
-
-		ok := zlibProcess()
-		switch ok {
-		case C.Z_OK:
-		default:
-			return inIdx, buf, determineError(errProcess, ok)
-		}
-
-		inIdx += int(C.getProcessed(p.s, intToInt64(readLen)))
-		outIdx += int(C.getCompressed(p.s, intToInt64(writeLen)))
-		buf = buf[:outIdx]
-
-		if int64(C.getCompressed(p.s, 0)) != 0 {
-			break
-		}
-	}
-
-	return inIdx, buf, nil
 }
 
 func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibProcess func() C.int, specificReset func() C.int) (int, []byte, error) {
@@ -81,7 +46,7 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 
 	outIdx := 0
 
-	for condition() {
+	run := func() error {
 		buf = grow(buf, minWritable)
 
 		outMem := startMemAddress(buf)
@@ -100,12 +65,23 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 			p.hasCompleted = true
 		case C.Z_OK:
 		default:
-			return inIdx, buf, determineError(errProcess, ok)
+			return determineError(errProcess, ok)
 		}
 
 		inIdx += int(C.getProcessed(p.s, intToInt64(readLen)))
 		outIdx += int(C.getCompressed(p.s, intToInt64(writeLen)))
 		buf = buf[:outIdx]
+		return nil
+	}
+
+	if err := run(); err != nil {
+		return inIdx, buf, err
+	}
+
+	for condition() {
+		if err := run(); err != nil {
+			return inIdx, buf, err
+		}
 	}
 
 	p.hasCompleted = false
