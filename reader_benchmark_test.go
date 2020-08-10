@@ -30,7 +30,7 @@ func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for j, v := range input {
-			r.ReadBytes(v, make([]byte, len(decompressedMcPackets[j])))
+			r.ReadBuffer(v, make([]byte, len(decompressedMcPackets[j])))
 		}
 	}
 }
@@ -130,7 +130,7 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
-	compressed, _ := w.WriteBytes(input, make([]byte, len(input)))
+	compressed, _ := w.WriteBuffer(input, make([]byte, len(input)))
 
 	r, _ := NewReader(nil)
 	defer r.Close()
@@ -138,7 +138,7 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		r.ReadBytes(compressed, nil)
+		r.ReadBuffer(compressed, nil)
 	}
 }
 
@@ -188,7 +188,7 @@ func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, 
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
-	compressed, _ := w.WriteBytes(input, make([]byte, len(input)))
+	compressed, _ := w.WriteBuffer(input, make([]byte, len(input)))
 
 	defer r.Close()
 

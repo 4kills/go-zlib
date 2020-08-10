@@ -23,7 +23,7 @@ type Writer struct {
 }
 
 // NewWriter returns a new Writer with the underlying io.Writer to compress to.
-// w may be nil if you only plan on using WriteBytes.
+// w may be nil if you only plan on using WriteBuffer.
 // Panics if the underlying c stream cannot be allocated which would indicate a severe error
 // not only for this library but also for the rest of your code.
 func NewWriter(w io.Writer) *Writer {
@@ -35,7 +35,7 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 // NewWriterLevel performs like NewWriter but you may also specify the compression level.
-// w may be nil if you only plan on using WriteBytes.
+// w may be nil if you only plan on using WriteBuffer.
 func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
 	return NewWriterLevelStrategy(w, level, DefaultStrategy)
 }
@@ -55,7 +55,7 @@ func NewWriterLevelStrategyDict(w io.Writer, level, strategy int, dict []byte) (
 }
 
 // NewWriterLevelStrategy performs like NewWriter but you may also specify the compression level and strategy.
-// w may be nil if you only plan on using WriteBytes.
+// w may be nil if you only plan on using WriteBuffer.
 func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 	if level != DefaultCompression && (level < minCompression || level > maxCompression) {
 		return nil, errInvalidLevel
@@ -69,12 +69,12 @@ func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 	return &Writer{w, level, strategy, c}, err
 }
 
-// WriteBytes takes uncompressed data in, compresses it to out and returns out sliced accordingly.
+// WriteBuffer takes uncompressed data in, compresses it to out and returns out sliced accordingly.
 // In most cases (if the compressed data is smaller than the uncompressed)
 // an out buffer of size len(in) should be sufficient.
 // If you pass nil for out, this function will try to allocate a fitting buffer.
 // Use this for whole-buffered, in-memory data.
-func (zw *Writer) WriteBytes(in, out []byte) ([]byte, error) {
+func (zw *Writer) WriteBuffer(in, out []byte) ([]byte, error) {
 	if len(in) == 0 {
 		return nil, errNoInput
 	}
@@ -93,7 +93,7 @@ func (zw *Writer) WriteBytes(in, out []byte) ([]byte, error) {
 // The data is not necessarily written to the underlying writer, if no Flush is called.
 // It returns the number of *uncompressed* bytes written to the underlying io.Writer in case of err = nil,
 // or the number of *compressed* bytes in case of err != nil.
-// Please consider using WriteBytes as it might be more convenient for your use case.
+// Please consider using WriteBuffer as it might be more convenient for your use case.
 func (zw *Writer) Write(p []byte) (int, error) {
 	if len(p) == 0 {
 		return -1, errNoInput

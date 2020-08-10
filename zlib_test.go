@@ -111,7 +111,7 @@ func TestHuffmanOnly(t *testing.T) {
 	}
 	defer w.Close()
 
-	b, err := w.WriteBytes(shortString, make([]byte, len(shortString)))
+	b, err := w.WriteBuffer(shortString, make([]byte, len(shortString)))
 	if err != nil {
 		t.Error(err)
 	}
@@ -159,7 +159,7 @@ func testWriteReadBytesRepeated(input []byte, t *testing.T) {
 	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
 	m := b.Len()
 	for i := 0; i < repeatCount; i++ {
-		_, decomp, err := r.ReadBytes(b.Next(m / repeatCount), nil)
+		_, decomp, err := r.ReadBuffer(b.Next(m / repeatCount), nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -257,7 +257,7 @@ func testWriteBytes(input []byte, t *testing.T) []byte {
 	w := NewWriter(nil)
 	defer w.Close()
 
-	b, err := w.WriteBytes(input, make([]byte, len(input)))
+	b, err := w.WriteBuffer(input, make([]byte, len(input)))
 	if err != nil {
 		t.Error(err)
 	}
@@ -271,7 +271,7 @@ func testReadBytes(b *bytes.Buffer, t *testing.T) []byte {
 	}
 	defer r.Close()
 
-	_, out, err := r.ReadBytes(b.Bytes(), nil)
+	_, out, err := r.ReadBuffer(b.Bytes(), nil)
 	if err != nil {
 		t.Error(err)
 	}
