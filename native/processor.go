@@ -53,7 +53,6 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 
 		readMem := uintptr(unsafe.Pointer(inMem)) + uintptr(inIdx)
 		readLen := len(in) - inIdx
-		p.readable = readLen
 		writeMem := uintptr(unsafe.Pointer(outMem)) + uintptr(outIdx)
 		writeLen := cap(buf) - outIdx
 
@@ -64,12 +63,15 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 		case C.Z_STREAM_END:
 			p.hasCompleted = true
 		case C.Z_OK:
+		case 10: // retry with more output space
+			return retry
 		default:
 			return determineError(errProcess, ok)
 		}
 
 		inIdx += int(C.getProcessed(p.s, intToInt64(readLen)))
 		outIdx += int(C.getCompressed(p.s, intToInt64(writeLen)))
+		p.readable = len(in) - inIdx
 		buf = buf[:outIdx]
 		return nil
 	}

@@ -11,7 +11,9 @@ import (
 type Reader struct {
 	r            io.Reader
 	decompressor *native.Decompressor
-	buffer       *bytes.Buffer
+	inBuffer     *bytes.Buffer
+	outBuffer    *bytes.Buffer
+	eof          bool
 }
 
 // Close closes the Reader by closing and freeing the underlying zlib stream.
@@ -20,16 +22,19 @@ func (r *Reader) Close() error {
 	if err := checkClosed(r.decompressor); err != nil {
 		return err
 	}
-	r.buffer = nil
+	r.inBuffer = nil
+	r.outBuffer = nil
 	return r.decompressor.Close()
 }
 
-// ReadBytes takes compressed data p, decompresses it and returns it as new byte slice.
-// It also returns the number n of bytes that were processed from the compressed slice.
+// ReadBytes takes compressed data p, decompresses it in one go and returns it as new byte slice.
+// This method is generally quite faster than Read if you know the output size beforehand.
+// If you don't, you can still try to use that method (provide size <= 0) but that might take longer than Read.
+// The method also returns the number n of bytes that were processed from the compressed slice.
 // If n < len(compressed) and err == nil then only the first n compressed bytes were in
 // a suitable zlib format and as such decompressed.
-// This method is generally slightly faster than Read.
-func (r *Reader) ReadBytes(compressed []byte) (n int, decompressed []byte, err error) {
+// ReadBytes resets the reader for new decompression.
+func (r *Reader) ReadBytes(compressed []byte, size int) (n int, decompressed []byte, err error) {
 	if len(compressed) == 0 {
 		return 0, nil, errNoInput
 	}
@@ -37,65 +42,89 @@ func (r *Reader) ReadBytes(compressed []byte) (n int, decompressed []byte, err e
 		return 0, nil, err
 	}
 
-	return r.decompressor.Decompress(compressed)
+	return r.decompressor.Decompress(compressed, size)
 }
 
-// Read reads compressed data from the provided Reader into the provided buffer p.
-// Please consider using ReadBytes instead, as it is slightly faster and generally easier to use
+// Read reads compressed data from the underlying Reader into the provided buffer p.
+// To reuse the reader after an EOF condition, you have to Reset it.
+// Please consider using ReadBytes for whole-buffered data instead, as it is faster and generally easier to use.
 func (r *Reader) Read(p []byte) (int, error) {
 	if len(p) == 0 {
-		return 0, errNoInput
+		return 0, io.ErrShortBuffer
 	}
 	if err := checkClosed(r.decompressor); err != nil {
 		return 0, err
 	}
-
-	r.buffer.Grow(len(p))
-	if _, err := io.Copy(r.buffer, r.r); err != nil {
-		return 0, err
-	}
-
-	if r.buffer.Len() == 0 {
+	if r.outBuffer.Len() == 0 && r.eof {
 		return 0, io.EOF
 	}
 
-	processed, out, err := r.decompressor.Decompress(r.buffer.Bytes())
+	if r.outBuffer.Len() != 0 {
+		min := len(p)
+		if len(p) < r.outBuffer.Len() {
+			min = r.outBuffer.Len()
+		}
+		copy(p, r.outBuffer.Bytes()[:min])
+		r.outBuffer.Next(min)
+
+		var err error
+		if r.outBuffer.Len() == 0 && r.eof {
+			err = io.EOF
+		}
+		return min, err
+	}
+
+	n, err := r.r.Read(p)
+	if err != nil && err != io.EOF {
+		return 0, err
+	}
+	r.inBuffer.Write(p[:n])
+
+	eof, processed, out, err := r.decompressor.DecompressStream(r.inBuffer.Bytes(), p)
+	r.eof = eof
 	if err != nil {
 		return 0, err
 	}
-	r.buffer.Next(processed)
+	r.inBuffer.Next(processed)
+
+	if r.eof && len(out) <= len(p){
+		copy(p, out)
+		return len(out), io.EOF
+	}
 
 	if len(out) > len(p) {
 		copy(p, out[:len(p)])
-		return len(p), io.ErrShortBuffer
+		r.outBuffer.Write(out[len(p):])
+		return len(p), nil
 	}
 
 	copy(p, out)
-	if r.buffer.Len() == 0 {
-		return len(out), io.EOF
-	}
 	return len(out), nil
 }
 
 // Reset resets the Reader to the state of being initialized with zlib.NewX(..),
 // but with the new underlying reader instead. It allows for reuse of the same reader.
 // AS OF NOW dict IS NOT USED. It's just there to implement the Resetter interface
-// to allow for easy interchangeablility with the std lib. Just pass nil.
+// to allow for easy interchangeability with the std lib. Just pass nil.
 func (r *Reader) Reset(reader io.Reader, dict []byte) error {
 	if err := checkClosed(r.decompressor); err != nil {
 		return err
 	}
 
-	r.buffer = &bytes.Buffer{}
+	err := r.decompressor.Reset()
+
+	r.inBuffer = &bytes.Buffer{}
+	r.outBuffer = &bytes.Buffer{}
+	r.eof = false
 	r.r = reader
-	return nil
+	return err
 }
 
 // NewReader returns a new reader, reading from r. It decompresses read data.
 // r may be nil if you only plan on using ReadBytes
 func NewReader(r io.Reader) (*Reader, error) {
 	c, err := native.NewDecompressor()
-	return &Reader{r, c, &bytes.Buffer{}}, err
+	return &Reader{r, c, &bytes.Buffer{}, &bytes.Buffer{}, false}, err
 }
 
 // NewReaderDict does exactly like NewReader as of NOW.
