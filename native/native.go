@@ -48,6 +48,8 @@ func determineError(parent error, errCode C.int) error {
 		err = errMem
 	case C.Z_VERSION_ERROR:
 		err = errVersion
+	case C.Z_BUF_ERROR:
+		err = errBuf
 	default:
 		err = errUnknown
 	}
@@ -61,6 +63,10 @@ func determineError(parent error, errCode C.int) error {
 func startMemAddress(b []byte) *byte {
 	if len(b) > 0 {
 		return &b[0]
+	}
+
+	if cap(b) > 0 {
+		return &b[:1][0]
 	}
 
 	b = append(b, 0)

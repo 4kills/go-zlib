@@ -33,7 +33,7 @@ func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
-			w.WriteBytes(v)
+			w.WriteBuffer(v, make([]byte, len(v)))
 		}
 	}
 }
@@ -55,13 +55,22 @@ func BenchmarkWriteAllMcPacketsDefaultStd(b *testing.B) {
 func benchmarkWriteMcPacketsGeneric(w TestWriter, input [][]byte, b *testing.B) {
 	defer w.Close()
 
+	buf := bytes.NewBuffer(make([]byte, 0, 1e+5))
+
 	b.ResetTimer()
 
 	reportBytesPerChunk(input, b)
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
-			w.Write(v)
+			w.Write(v) // writes data
+			// flushes data to buf and sets to buf again (reset compression for indiviual packets)
+			w.Flush()
+
+			b.StopTimer()
+			w.Reset(buf)
+			buf.Reset()
+			b.StartTimer()
 		}
 	}
 }
@@ -109,11 +118,7 @@ func benchmarkWriteBytesLevel(input []byte, level int, b *testing.B) {
 	defer w.Close()
 
 	for i := 0; i < b.N; i++ {
-		w.WriteBytes(input)
-
-		b.StopTimer()
-		w.Reset(nil) // to ensure there are no caching effects for the same packet over and over again
-		b.StartTimer()
+		w.WriteBuffer(input, make([]byte, len(input))) // write bytes resets the compressor
 	}
 }
 
@@ -165,9 +170,10 @@ func benchmarkWriteLevelGeneric(w TestWriter, buf *bytes.Buffer, input []byte, b
 
 	for i := 0; i < b.N; i++ {
 		w.Write(input)
+		w.Flush()
 
 		b.StopTimer()
-		w.Reset(buf) // to ensure there are no caching effects for the same packet over and over again
+		w.Reset(buf) // to ensure packets are compressed individually
 		buf.Reset()
 		b.StartTimer()
 	}

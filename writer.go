@@ -23,7 +23,7 @@ type Writer struct {
 }
 
 // NewWriter returns a new Writer with the underlying io.Writer to compress to.
-// w may be nil if you only plan on using WriteBytes.
+// w may be nil if you only plan on using WriteBuffer.
 // Panics if the underlying c stream cannot be allocated which would indicate a severe error
 // not only for this library but also for the rest of your code.
 func NewWriter(w io.Writer) *Writer {
@@ -35,7 +35,7 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 // NewWriterLevel performs like NewWriter but you may also specify the compression level.
-// w may be nil if you only plan on using WriteBytes.
+// w may be nil if you only plan on using WriteBuffer.
 func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
 	return NewWriterLevelStrategy(w, level, DefaultStrategy)
 }
@@ -55,12 +55,12 @@ func NewWriterLevelStrategyDict(w io.Writer, level, strategy int, dict []byte) (
 }
 
 // NewWriterLevelStrategy performs like NewWriter but you may also specify the compression level and strategy.
-// w may be nil if you only plan on using WriteBytes.
+// w may be nil if you only plan on using WriteBuffer.
 func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 	if level != DefaultCompression && (level < minCompression || level > maxCompression) {
 		return nil, errInvalidLevel
 	}
-	if strategy < minCompression || strategy > maxCompression {
+	if strategy < minStrategy || strategy > maxStrategy {
 		return nil, errInvalidStrategy
 	}
 
@@ -69,21 +69,31 @@ func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 	return &Writer{w, level, strategy, c}, err
 }
 
-// WriteBytes takes uncompressed data p, compresses it and returns it as new byte slice.
-func (zw *Writer) WriteBytes(p []byte) ([]byte, error) {
-	if len(p) == 0 {
+// WriteBuffer takes uncompressed data in, compresses it to out and returns out sliced accordingly.
+// In most cases (if the compressed data is smaller than the uncompressed)
+// an out buffer of size len(in) should be sufficient.
+// If you pass nil for out, this function will try to allocate a fitting buffer.
+// Use this for whole-buffered, in-memory data.
+func (zw *Writer) WriteBuffer(in, out []byte) ([]byte, error) {
+	if len(in) == 0 {
 		return nil, errNoInput
 	}
 	if err := checkClosed(zw.compressor); err != nil {
 		return nil, err
 	}
 
-	return zw.compressor.Compress(p)
+	if out == nil {
+		return zw.compressor.Compress(in, make([]byte, len(in)))
+	}
+
+	return zw.compressor.Compress(in, out)
 }
 
 // Write compresses the given data p and writes it to the underlying io.Writer.
-// It returns the number of *compressed* bytes written to the underlying io.Writer.
-// Please consider using WriteBytes as it might be more convenient for your use case.
+// The data is not necessarily written to the underlying writer, if no Flush is called.
+// It returns the number of *uncompressed* bytes written to the underlying io.Writer in case of err = nil,
+// or the number of *compressed* bytes in case of err != nil.
+// Please consider using WriteBuffer as it might be more convenient for your use case.
 func (zw *Writer) Write(p []byte) (int, error) {
 	if len(p) == 0 {
 		return -1, errNoInput
@@ -92,7 +102,7 @@ func (zw *Writer) Write(p []byte) (int, error) {
 		return -1, err
 	}
 
-	out, err := zw.compressor.Compress(p)
+	out, err := zw.compressor.CompressStream(p)
 	if err != nil {
 		return 0, err
 	}
@@ -105,7 +115,7 @@ func (zw *Writer) Write(p []byte) (int, error) {
 		}
 		n += inc
 	}
-	return len(out), nil
+	return len(p), nil
 }
 
 // Close closes the writer by flushing any unwritten data to the underlying writer.
@@ -115,23 +125,50 @@ func (zw *Writer) Close() error {
 		return err
 	}
 
-	return zw.compressor.Close()
+	b, err := zw.compressor.Close()
+	if err != nil {
+		return err
+	}
+
+	if zw.w == nil {
+		return err
+	}
+
+	_, err = zw.w.Write(b)
+	return err
 }
 
-// Flush does NOTHING. Write always flushes content to the underlying writer.
-// This method just exists for easy interchangeability with the go std zlib library
+// Flush writes compressed buffered data to the underlying writer.
 func (zw *Writer) Flush() error {
 	if err := checkClosed(zw.compressor); err != nil {
 		return err
 	}
-	return nil
+	b, _ := zw.compressor.Flush()
+	_, err := zw.w.Write(b)
+	return err
 }
 
-// Reset resets the Writer to the state of being initialized with zlib.NewX(..),
+// Reset flushes the buffered data to the current underyling writer,
+// resets the Writer to the state of being initialized with zlib.NewX(..),
 // but with the new underlying writer instead.
-// This will panic if the writer has already been closed
+// This will panic if the writer has already been closed, writer could not be reset or could not write to current
+// underlying writer.
 func (zw *Writer) Reset(w io.Writer) {
 	if err := checkClosed(zw.compressor); err != nil {
+		panic(err)
+	}
+
+	b, err := zw.compressor.Reset()
+	if err != nil {
+		panic(err)
+	}
+
+	if zw.w == nil {
+		zw.w = w
+		return
+	}
+
+	if _, err := zw.w.Write(b); err != nil {
 		panic(err)
 	}
 

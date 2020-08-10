@@ -43,25 +43,69 @@ func (c *Decompressor) Close() error {
 	return nil
 }
 
-// Decompress decompresses the given data and returns it as byte slice
-func (c *Decompressor) Decompress(in []byte) (int, []byte, error) {
+func (c *Decompressor) Reset() error {
+	return determineError(errReset, C.inflateReset(c.p.s))
+}
+
+func (c *Decompressor) DecompressStream(in, out []byte) (bool, int, []byte, error) {
+	hasCompleted := false
 	condition := func() bool {
+		hasCompleted = c.p.hasCompleted
 		return !c.p.hasCompleted && c.p.readable > 0
 	}
 
 	zlibProcess := func() C.int {
-		return C.inflate(c.p.s, C.Z_PARTIAL_FLUSH)
+		return C.inflate(c.p.s, C.Z_SYNC_FLUSH)
+	}
+
+	n, b, err := c.p.process(
+		in,
+		out[0:0],
+		condition,
+		zlibProcess,
+		func() C.int { return 0 },
+	)
+	return hasCompleted, n, b, err
+}
+
+// Decompress decompresses the given data and returns it as byte slice (preferably in one go)
+func (c *Decompressor) Decompress(in, out []byte) (int, []byte, error) {
+	zlibProcess := func() C.int {
+		ok := C.inflate(c.p.s, C.Z_FINISH)
+		if ok == C.Z_BUF_ERROR {
+			return 10 // retry
+		}
+		return ok
 	}
 
 	specificReset := func() C.int {
 		return C.inflateReset(c.p.s)
 	}
 
-	return c.p.process(
-		in,
-		make([]byte, 0, len(in)*assumedCompressionFactor),
-		condition,
-		zlibProcess,
-		specificReset,
-	)
+	if out != nil {
+		return c.p.process(
+			in,
+			out,
+			nil,
+			zlibProcess,
+			specificReset,
+		)
+	}
+
+	inc := 1
+	for {
+		n, b, err := c.p.process(
+			in,
+			make([]byte, 0, len(in)*assumedCompressionFactor*inc),
+			nil,
+			zlibProcess,
+			specificReset,
+		)
+		if err == retry {
+			inc++
+			specificReset()
+			continue
+		}
+		return n, b, err
+	}
 }

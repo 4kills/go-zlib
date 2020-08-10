@@ -11,6 +11,8 @@ const repeatCount = 30
 var shortString = []byte("hello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\nhello, world\n")
 var longString []byte
 
+// INTEGRATION TESTS
+
 // primarly checks properly working EOF conditions of Read
 func TestWrite_ReadReadFull_wShortString(t *testing.T) {
 	b := testWrite(shortString, t)
@@ -109,7 +111,7 @@ func TestHuffmanOnly(t *testing.T) {
 	}
 	defer w.Close()
 
-	b, err := w.WriteBytes(shortString)
+	b, err := w.WriteBuffer(shortString, make([]byte, len(shortString)))
 	if err != nil {
 		t.Error(err)
 	}
@@ -157,7 +159,7 @@ func testWriteReadBytesRepeated(input []byte, t *testing.T) {
 	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
 	m := b.Len()
 	for i := 0; i < repeatCount; i++ {
-		_, decomp, err := r.ReadBytes(b.Next(m / repeatCount))
+		_, decomp, err := r.ReadBuffer(b.Next(m / repeatCount), nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -188,6 +190,10 @@ func testReadRepeatedContinuous(input []byte, t *testing.T) {
 		if n != len(input) {
 			t.Errorf("read count doesn't match: want %d, got %d", len(input), n)
 		}
+		err = r.Reset(r.r, nil)
+		if err != nil {
+			t.Error(err)
+		}
 
 		sliceEquals(t, input, out)
 	}
@@ -196,7 +202,8 @@ func testReadRepeatedContinuous(input []byte, t *testing.T) {
 func testWriteReadRepeated(input []byte, t *testing.T) {
 	rep, b := testWriteRepeated(input, t)
 
-	r, err := NewReader(b)
+	stream := &bytes.Buffer{}
+	r, err := NewReader(stream)
 	if err != nil {
 		t.Error(err)
 	}
@@ -205,11 +212,19 @@ func testWriteReadRepeated(input []byte, t *testing.T) {
 	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
 	for i := 0; i < repeatCount; i++ {
 		o := make([]byte, len(rep)/repeatCount)
-		n, err := r.Read(o)
-		out.Write(o[:n])
-		if err == io.EOF {
-			break
+		var err error
+		i := 0
+		for err != io.EOF {
+			stream.Write(b.Bytes()[i*b.Len()/repeatCount : (i+1) *b.Len()/repeatCount])
+			n := 0
+			n, err = r.Read(o)
+			out.Write(o[:n])
+			if err != nil && err != io.EOF {
+				t.Error(err)
+				t.FailNow()
+			}
 		}
+		err = r.Reset(r.r, nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -233,6 +248,7 @@ func testWriteRepeated(input []byte, t *testing.T) ([]byte, *bytes.Buffer) {
 		if err != nil {
 			t.Error(err)
 		}
+		w.Reset(w.w)
 	}
 	return rep, &b
 }
@@ -241,7 +257,7 @@ func testWriteBytes(input []byte, t *testing.T) []byte {
 	w := NewWriter(nil)
 	defer w.Close()
 
-	b, err := w.WriteBytes(input)
+	b, err := w.WriteBuffer(input, make([]byte, len(input)))
 	if err != nil {
 		t.Error(err)
 	}
@@ -255,7 +271,7 @@ func testReadBytes(b *bytes.Buffer, t *testing.T) []byte {
 	}
 	defer r.Close()
 
-	_, out, err := r.ReadBytes(b.Bytes())
+	_, out, err := r.ReadBuffer(b.Bytes(), nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -267,7 +283,7 @@ func testWrite(input []byte, t *testing.T) *bytes.Buffer {
 	w := NewWriter(&b)
 	defer w.Close()
 
-	_, err := w.Write(shortString)
+	_, err := w.Write(input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -294,6 +310,7 @@ func sliceEquals(t *testing.T, expected, actual []byte) {
 	for i, v := range expected {
 		if v != actual[i] {
 			t.Errorf("slices differ at index %d: want %d; got %d", i, v, actual[i])
+			t.FailNow()
 		}
 	}
 }

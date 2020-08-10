@@ -15,12 +15,13 @@ var compressedMcPackets [][]byte
 
 func BenchmarkReadBytesAllMcPacketsDefault(b *testing.B) {
 	loadPacketsIfNil(&compressedMcPackets, compressedMcPacketsLoc)
+	loadPacketsIfNil(&decompressedMcPackets, decompressedMcPacketsLoc)
 
 	benchmarkReadBytesMcPacketsGeneric(compressedMcPackets, b)
 }
 
 func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
-	r, _ := NewReader(bytes.NewBuffer(compressedMcPackets[0]))
+	r, _ := NewReader(nil)
 	defer r.Close()
 
 	b.ResetTimer()
@@ -28,8 +29,8 @@ func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 	reportBytesPerChunk(input, b)
 
 	for i := 0; i < b.N; i++ {
-		for _, v := range input {
-			r.ReadBytes(v)
+		for j, v := range input {
+			r.ReadBuffer(v, make([]byte, len(decompressedMcPackets[j])))
 		}
 	}
 }
@@ -59,7 +60,7 @@ func BenchmarkReadAllMcPacketsDefaultStd(b *testing.B) {
 		for _, v := range compressedMcPackets {
 			b.StopTimer()
 			res, _ := r.(zlib.Resetter)
-			res.Reset(bytes.NewBuffer(v), nil) // to make the std reader work
+			res.Reset(bytes.NewBuffer(v), nil)
 			b.StartTimer()
 
 			r.Read(decompressed)
@@ -77,7 +78,11 @@ func benchmarkReadMcPacketsGeneric(r io.ReadCloser, underlyingReader *bytes.Buff
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
-			underlyingReader.Write(v)
+			b.StopTimer()
+			res, _ := r.(Resetter)
+			res.Reset(bytes.NewBuffer(v), nil)
+			b.StartTimer()
+
 			r.Read(out)
 		}
 	}
@@ -125,7 +130,7 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
-	compressed, _ := w.WriteBytes(input)
+	compressed, _ := w.WriteBuffer(input, make([]byte, len(input)))
 
 	r, _ := NewReader(nil)
 	defer r.Close()
@@ -133,7 +138,7 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		r.ReadBytes(compressed)
+		r.ReadBuffer(compressed, nil)
 	}
 }
 
@@ -183,7 +188,7 @@ func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, 
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
-	compressed, _ := w.WriteBytes(input)
+	compressed, _ := w.WriteBuffer(input, make([]byte, len(input)))
 
 	defer r.Close()
 
@@ -192,7 +197,13 @@ func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		underlyingReader.Write(compressed) // requires some time but only very little compared to the benchmarked method r.Read
-		r.Read(decompressed)
+		b.StopTimer()
+		res := r.(Resetter)
+		res.Reset(bytes.NewBuffer(compressed), nil)
+		b.StartTimer()
+		var err error
+		for err != io.EOF {
+			_, err = r.Read(decompressed)
+		}
 	}
 }
