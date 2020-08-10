@@ -29,7 +29,7 @@ func benchmarkReadBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
-			r.ReadBytes(v)
+			r.ReadBytes(v, 0)
 		}
 	}
 }
@@ -133,7 +133,7 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		r.ReadBytes(compressed)
+		r.ReadBytes(compressed, 0)
 	}
 }
 
