@@ -65,6 +65,10 @@ func startMemAddress(b []byte) *byte {
 		return &b[0]
 	}
 
+	if cap(b) > 0 {
+		return &b[:1][0]
+	}
+
 	b = append(b, 0)
 	ptr := &b[0]
 	b = b[0:0]
