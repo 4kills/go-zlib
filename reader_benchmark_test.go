@@ -130,7 +130,7 @@ func benchmarkReadBytesLevel(input []byte, level int, b *testing.B) {
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
-	compressed, _ := w.WriteBytes(input)
+	compressed, _ := w.WriteBytes(input, make([]byte, len(input)))
 
 	r, _ := NewReader(nil)
 	defer r.Close()
@@ -188,7 +188,7 @@ func benchmarkReadLevelGeneric(r io.ReadCloser, underlyingReader *bytes.Buffer, 
 	w, _ := NewWriterLevel(nil, level)
 	defer w.Close()
 
-	compressed, _ := w.WriteBytes(input)
+	compressed, _ := w.WriteBytes(input, make([]byte, len(input)))
 
 	defer r.Close()
 

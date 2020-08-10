@@ -111,7 +111,7 @@ func TestHuffmanOnly(t *testing.T) {
 	}
 	defer w.Close()
 
-	b, err := w.WriteBytes(shortString)
+	b, err := w.WriteBytes(shortString, make([]byte, len(shortString)))
 	if err != nil {
 		t.Error(err)
 	}
@@ -257,7 +257,7 @@ func testWriteBytes(input []byte, t *testing.T) []byte {
 	w := NewWriter(nil)
 	defer w.Close()
 
-	b, err := w.WriteBytes(input)
+	b, err := w.WriteBytes(input, make([]byte, len(input)))
 	if err != nil {
 		t.Error(err)
 	}

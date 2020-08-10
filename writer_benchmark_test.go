@@ -33,7 +33,7 @@ func benchmarkWriteBytesMcPacketsGeneric(input [][]byte, b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, v := range input {
-			w.WriteBytes(v)
+			w.WriteBytes(v, make([]byte, len(v)))
 		}
 	}
 }
@@ -118,7 +118,7 @@ func benchmarkWriteBytesLevel(input []byte, level int, b *testing.B) {
 	defer w.Close()
 
 	for i := 0; i < b.N; i++ {
-		w.WriteBytes(input) // write bytes resets the compressor
+		w.WriteBytes(input, make([]byte, len(input))) // write bytes resets the compressor
 	}
 }
 
