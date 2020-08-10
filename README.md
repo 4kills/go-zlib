@@ -69,7 +69,7 @@ You may also use go modules (available since go 1.11) to get the version of a sp
 
 ## Import
 
-This library is designed in a way to make it easy to swap it out for the go standard zlib library. Therefore you should only need to change imports and not a single line of your written code. 
+This library is designed in a way to make it easy to swap it out for the go standard zlib library. Therefore, you should only need to change imports and not a single line of your written code. 
 
 Just remove: 
 
@@ -98,7 +98,7 @@ defer w.Close()                 // don't forget to close this
 w.Write([]byte("uncompressed")) // put in any data as []byte  
 ```
 
-### Or alternatively: 
+### Alternatively: 
 
 ```go 
 w := zlib.NewWriter(nil)                     // requires no writer if WriteBytes is used
@@ -119,7 +119,7 @@ io.Copy(os.Stdout, r)            // read all the decompressed data and write it 
 // r.Read(someBuffer)            // can also be done directly
 ```
 
-### Or alternatively: 
+### Alternatively: 
 
 ```go 
 r := zlib.NewReader(nil)         // requires no reader if ReadBytes is used
@@ -136,7 +136,7 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 - **`HuffmanOnly` does NOT work as with the standard library**. This is the only exception from the philosophy to make this library interchangeable with the standard library. If you want to use 
 `HuffmanOnly`, refer to the `NewWriterLevelStrategy()` constructor function. However, your existing code won't break by leaving `HuffmanOnly` as argument to `NewWriterLevel()`, it will just use the default compression strategy and compression level 2.  
 
-- Memory Usage: `Compressing` requires ~256KiB of additional memory during execution, while `Decompressing` requires ~39 KiB of additional memory during execution. 
+- Memory Usage: `Compressing` requires ~256 KiB of additional memory during execution, while `Decompressing` requires ~39 KiB of additional memory during execution. 
 So if you have 8 simultaneous `WriteBytes` working from 8 Writers across 8 threads, your memory footprint from that alone will be about ~2MiByte.
 
 - You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. The contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times, you do not need to close them until you are completely done with them (perhaps only at the very end of your program).  
@@ -149,7 +149,7 @@ As the zlib standard has been traditionally used for compressing smaller chunks 
 To that end, I have recorded 930 individual Minecraft packets, totalling 11,445,993 bytes in umcompressed data and 1,564,159 bytes in compressed data.
 These packets represent actual client-server communication and were recorded using [this](https://github.com/haveachin/infrared) software.
 
-The benchmarks were executed on different hardware and operating systems, including AMD and Intel processors, as well as all the supported operating systems (Windows, Linux, MacOS). All of the benchmarked functions/methods were executed hundreds of times and the numbers you are about to see are the averages over all these executions.
+The benchmarks were executed on different hardware and operating systems, including AMD and Intel processors, as well as all the supported operating systems (Windows, Linux, MacOS). All the benchmarked functions/methods were executed hundreds of times, and the numbers you are about to see are the averages over all these executions.
 
 These benchmarks compare this library (blue) to the go standard library (yellow) and show that this library performs better in all cases. 
 
@@ -157,7 +157,7 @@ These benchmarks compare this library (blue) to the go standard library (yellow)
   
     <summary> (A note regarding testing on your machine) </summary>
   
-    Please note that you will need an Internet connection for some of the benchmarks to function. This is because these benchmarks will download the mc packets from [here](https://github.com/4kills/zlib_benchmark) and temporarily store them in memory for the duration of the benchmark tests, so this repository won't have to include the data in order save space on your machine and to make it a lightweight library.
+    Please note that you will need an Internet connection for some benchmarks to function. This is because these benchmarks will download the mc packets from [here](https://github.com/4kills/zlib_benchmark) and temporarily store them in memory for the duration of the benchmark tests, so this repository won't have to include the data in order save space on your machine and to make it a lightweight library.
   
   </details>
 
@@ -165,7 +165,7 @@ These benchmarks compare this library (blue) to the go standard library (yellow)
 
 ![compression total](https://i.imgur.com/CPjYJQQ.png)
 
-This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to compress **all** of the 930 packets (~11.5MB) on different systems in nanoseconds. Note that the two rightmost data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to generally perform better than Windows.
+This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to compress **all** of the 930 packets (~11.5 MB) on different systems in nanoseconds. Note that the two rightmost data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to generally perform better than Windows.
 
 ![compression relative](https://i.imgur.com/dK6i9Ij.png)
 
@@ -178,9 +178,9 @@ That makes the standard library **~13.6% slower** than this library.
 
 ![compression total](https://i.imgur.com/Ef3xM6Q.png)
 
-This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to decompress **all** of the 930 packets (~1.5MB) on different systems in nanoseconds. Note that the two rightmost data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to generally perform better than Windows.
+This chart shows how long it took for the methods of this library (blue) and the standard library (yellow) to decompress **all** of the 930 packets (~1.5 MB) on different systems in nanoseconds. Note that the two rightmost data points were tested on **exactly the same** hardware in a dual-boot setup and that Linux seems to generally perform better than Windows.
 
-![dcompression relative](https://i.imgur.com/UQ7dKpA.png)
+![decompression relative](https://i.imgur.com/UQ7dKpA.png)
 
 This chart shows the time it took for this library's `Read` (blue) to decompress the data in nanoseconds, as well as the time it took for the standard library's `Read` (ReadStd, Yellow) to decompress the data in nanoseconds. The vertical axis shows percentages relative to the time needed by the standard library, thus you can see how much faster this library is. 
 
