@@ -159,7 +159,7 @@ func testWriteReadBytesRepeated(input []byte, t *testing.T) {
 	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
 	m := b.Len()
 	for i := 0; i < repeatCount; i++ {
-		_, decomp, err := r.ReadBytes(b.Next(m / repeatCount), 0)
+		_, decomp, err := r.ReadBytes(b.Next(m / repeatCount), nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -271,7 +271,7 @@ func testReadBytes(b *bytes.Buffer, t *testing.T) []byte {
 	}
 	defer r.Close()
 
-	_, out, err := r.ReadBytes(b.Bytes(), 0)
+	_, out, err := r.ReadBytes(b.Bytes(), nil)
 	if err != nil {
 		t.Error(err)
 	}
