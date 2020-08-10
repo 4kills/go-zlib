@@ -60,7 +60,7 @@ func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 	if level != DefaultCompression && (level < minCompression || level > maxCompression) {
 		return nil, errInvalidLevel
 	}
-	if strategy < minCompression || strategy > maxCompression {
+	if strategy < minStrategy || strategy > maxStrategy {
 		return nil, errInvalidStrategy
 	}
 
