@@ -69,17 +69,24 @@ func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 	return &Writer{w, level, strategy, c}, err
 }
 
-// WriteBytes takes uncompressed data p, compresses it and returns it as new byte slice.
+// WriteBytes takes uncompressed data in, compresses it to out and returns out sliced accordingly.
+// In most cases (if the compressed data is smaller than the uncompressed)
+// an out buffer of size len(in) should be sufficient.
+// If you pass nil for out, this function will try to allocate a fitting buffer.
 // Use this for whole-buffered, in-memory data.
-func (zw *Writer) WriteBytes(p []byte) ([]byte, error) {
-	if len(p) == 0 {
+func (zw *Writer) WriteBytes(in, out []byte) ([]byte, error) {
+	if len(in) == 0 {
 		return nil, errNoInput
 	}
 	if err := checkClosed(zw.compressor); err != nil {
 		return nil, err
 	}
 
-	return zw.compressor.Compress(p)
+	if out == nil {
+		return zw.compressor.Compress(in, make([]byte, len(in)))
+	}
+
+	return zw.compressor.Compress(in, out)
 }
 
 // Write compresses the given data p and writes it to the underlying io.Writer.

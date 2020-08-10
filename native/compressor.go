@@ -77,13 +77,13 @@ func (c *Compressor) Close() ([]byte, error) {
 }
 
 // Compress compresses the given data and returns it as byte slice
-func (c *Compressor) Compress(in []byte) ([]byte, error) {
-	condition := func() bool {
-		return !c.p.hasCompleted
-	}
-
+func (c *Compressor) Compress(in, out []byte) ([]byte, error) {
 	zlibProcess := func() C.int {
-		return C.deflate(c.p.s, C.Z_FINISH)
+		ok := C.deflate(c.p.s, C.Z_FINISH)
+		if ok != C.Z_STREAM_END {
+			return C.Z_BUF_ERROR
+		}
+		return ok
 	}
 
 	specificReset := func() C.int {
@@ -92,8 +92,8 @@ func (c *Compressor) Compress(in []byte) ([]byte, error) {
 
 	_, b, err := c.p.process(
 		in,
-		make([]byte, 0, len(in)/assumedCompressionFactor),
-		condition,
+		out,
+		nil,
 		zlibProcess,
 		specificReset,
 	)
@@ -119,6 +119,30 @@ func (c *Compressor) CompressStream(in []byte) ([]byte, error) {
 	return b, err
 }
 
+// compress compresses the given data and returns it as byte slice
+func (c *Compressor) compressFinish(in []byte) ([]byte, error) {
+	condition := func() bool {
+		return !c.p.hasCompleted
+	}
+
+	zlibProcess := func() C.int {
+		return C.deflate(c.p.s, C.Z_FINISH)
+	}
+
+	specificReset := func() C.int {
+		return C.deflateReset(c.p.s)
+	}
+
+	_, b, err := c.p.process(
+		in,
+		make([]byte, 0, len(in)/assumedCompressionFactor),
+		condition,
+		zlibProcess,
+		specificReset,
+	)
+	return b, err
+}
+
 func (c *Compressor) Flush() ([]byte, error) {
 	zlibProcess := func() C.int {
 		return C.deflate(c.p.s, C.Z_SYNC_FLUSH)
@@ -139,7 +163,7 @@ func (c *Compressor) Flush() ([]byte, error) {
 }
 
 func (c *Compressor) Reset() ([]byte, error) {
-	b, err := c.Compress([]byte{})
+	b, err := c.compressFinish([]byte{})
 	if err != nil {
 		return b, err
 	}
