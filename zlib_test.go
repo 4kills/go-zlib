@@ -190,6 +190,10 @@ func testReadRepeatedContinuous(input []byte, t *testing.T) {
 		if n != len(input) {
 			t.Errorf("read count doesn't match: want %d, got %d", len(input), n)
 		}
+		err = r.Reset(r.r, nil)
+		if err != nil {
+			t.Error(err)
+		}
 
 		sliceEquals(t, input, out)
 	}
@@ -198,7 +202,8 @@ func testReadRepeatedContinuous(input []byte, t *testing.T) {
 func testWriteReadRepeated(input []byte, t *testing.T) {
 	rep, b := testWriteRepeated(input, t)
 
-	r, err := NewReader(b)
+	stream := &bytes.Buffer{}
+	r, err := NewReader(stream)
 	if err != nil {
 		t.Error(err)
 	}
@@ -207,11 +212,19 @@ func testWriteReadRepeated(input []byte, t *testing.T) {
 	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
 	for i := 0; i < repeatCount; i++ {
 		o := make([]byte, len(rep)/repeatCount)
-		n, err := r.Read(o)
-		out.Write(o[:n])
-		if err == io.EOF {
-			break
+		var err error
+		i := 0
+		for err != io.EOF {
+			stream.Write(b.Bytes()[i*b.Len()/repeatCount : (i+1) *b.Len()/repeatCount])
+			n := 0
+			n, err = r.Read(o)
+			out.Write(o[:n])
+			if err != nil && err != io.EOF {
+				t.Error(err)
+				t.FailNow()
+			}
 		}
+		err = r.Reset(r.r, nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -235,6 +248,7 @@ func testWriteRepeated(input []byte, t *testing.T) ([]byte, *bytes.Buffer) {
 		if err != nil {
 			t.Error(err)
 		}
+		w.Reset(w.w)
 	}
 	return rep, &b
 }
