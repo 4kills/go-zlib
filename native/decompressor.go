@@ -69,11 +69,7 @@ func (c *Decompressor) DecompressStream(in, out []byte) (bool, int, []byte, erro
 }
 
 // Decompress decompresses the given data and returns it as byte slice (preferably in one go)
-func (c *Decompressor) Decompress(in []byte, size int) (int, []byte, error) {
-	condition := func() bool {
-		return !c.p.hasCompleted && c.p.readable > 0
-	}
-
+func (c *Decompressor) Decompress(in, out []byte) (int, []byte, error) {
 	zlibProcess := func() C.int {
 		ok := C.inflate(c.p.s, C.Z_FINISH)
 		if ok == C.Z_BUF_ERROR {
@@ -86,11 +82,11 @@ func (c *Decompressor) Decompress(in []byte, size int) (int, []byte, error) {
 		return C.inflateReset(c.p.s)
 	}
 
-	if size > 0 {
+	if out != nil {
 		return c.p.process(
 			in,
-			make([]byte, 0, size),
-			condition,
+			out,
+			nil,
 			zlibProcess,
 			specificReset,
 		)
@@ -101,7 +97,7 @@ func (c *Decompressor) Decompress(in []byte, size int) (int, []byte, error) {
 		n, b, err := c.p.process(
 			in,
 			make([]byte, 0, len(in)*assumedCompressionFactor*inc),
-			condition,
+			nil,
 			zlibProcess,
 			specificReset,
 		)

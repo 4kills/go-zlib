@@ -27,14 +27,14 @@ func (r *Reader) Close() error {
 	return r.decompressor.Close()
 }
 
-// ReadBytes takes compressed data p, decompresses it in one go and returns it as new byte slice.
-// This method is generally quite faster than Read if you know the output size beforehand.
-// If you don't, you can still try to use that method (provide size <= 0) but that might take longer than Read.
+// ReadBytes takes compressed data p, decompresses it to out in one go and returns out sliced accordingly.
+// This method is generally faster than Read if you know the output size beforehand.
+// If you don't, you can still try to use that method (provide out == nil) but that might take longer than Read.
 // The method also returns the number n of bytes that were processed from the compressed slice.
 // If n < len(compressed) and err == nil then only the first n compressed bytes were in
 // a suitable zlib format and as such decompressed.
 // ReadBytes resets the reader for new decompression.
-func (r *Reader) ReadBytes(compressed []byte, size int) (n int, decompressed []byte, err error) {
+func (r *Reader) ReadBytes(compressed, out []byte) (n int, decompressed []byte, err error) {
 	if len(compressed) == 0 {
 		return 0, nil, errNoInput
 	}
@@ -42,7 +42,7 @@ func (r *Reader) ReadBytes(compressed []byte, size int) (n int, decompressed []b
 		return 0, nil, err
 	}
 
-	return r.decompressor.Decompress(compressed, size)
+	return r.decompressor.Decompress(compressed, out)
 }
 
 // Read reads compressed data from the underlying Reader into the provided buffer p.

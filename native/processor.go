@@ -47,7 +47,9 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 	outIdx := 0
 
 	run := func() error {
-		buf = grow(buf, minWritable)
+		if condition != nil {
+			buf = grow(buf, minWritable)
+		}
 
 		outMem := startMemAddress(buf)
 
@@ -80,6 +82,9 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 		return inIdx, buf, err
 	}
 
+	if condition == nil {
+		condition = func() bool {return false}
+	}
 	for condition() {
 		if err := run(); err != nil {
 			return inIdx, buf, err
