@@ -8,12 +8,9 @@ This ultra fast **go zlib library** wraps the original zlib library written in C
 
 **It offers considerable performance benefits compared to the standard go zlib library**, as the [benchmarks](#benchmarks) show.
 
-This library is designed to be completely and easily interchangeable with the go standard zlib library. <ins>You won't have to rewrite or modify a single line of code!</ins> Checking if this library works for you is as easy as changing [imports](#import)!
+This library is designed to be completely and easily interchangeable with the go standard zlib library. *You won't have to rewrite or modify a single line of code!* Checking if this library works for you is as easy as changing [imports](#import)!
 
-This library also offers <ins>blazing fast convenience methods</ins> that can be used as a clean, alternative interface to that provided by the go standard library. (See [usage](#usage)).
-
-**WARNING:** As of now, this library does not support streaming and can thus only compress as many bytes as fit into a single buffer (as much as your memory can hold) in one go (no pun intended). 
-You can still chunk the data and put it back together after decompressing. 
+This library also offers *blazing fast convenience methods* that can be used as a clean, alternative interface to that provided by the go standard library. (See [usage](#usage)).
 
 ## Table of Contents
 
@@ -41,7 +38,7 @@ You can still chunk the data and put it back together after decompressing.
 - [x] Benchmarks with comparisons to the go standard zlib library
 - [ ] Custom, user-defined dictionaries
 - [ ] More customizable memory management 
-- [ ] Support streaming of data to compress/decompress data. 
+- [x] Support streaming of data to compress/decompress data. 
 
 # Installation
 
@@ -94,16 +91,16 @@ This library can be used exactly like the [go standard zlib library](https://gol
 ```go
 var b bytes.Buffer              // use any writer
 w := zlib.NewWriter(&b)         // create a new zlib.Writer, compressing to b
-defer w.Close()                 // don't forget to close this
 w.Write([]byte("uncompressed")) // put in any data as []byte  
+w.Close()                       // don't forget to close this
 ```
 
 ### Alternatively: 
 
 ```go 
-w := zlib.NewWriter(nil)                     // requires no writer if WriteBytes is used
-defer w.Close()                              // always close when you are done with it
-c, _ := w.WriteBytes([]byte("uncompressed")) // compresses input & returns compressed []byte 
+w := zlib.NewWriter(nil)                           // requires no writer if WriteBuffer is used
+defer w.Close()                                    // always close when you are done with it
+c, _ := w.WriteBuffer([]byte("uncompressed"), nil) // compresses input & returns compressed []byte 
 ```
 
 ## Decompress
@@ -116,15 +113,15 @@ r, err := zlib.NewReader(&b)     // create a new zlib.Reader, decompressing from
 defer r.Close()                  // don't forget to close this either
 io.Copy(os.Stdout, r)            // read all the decompressed data and write it somewhere
 // or:
-// r.Read(someBuffer)            // can also be done directly
+// r.Read(someBuffer)            // or use read yourself
 ```
 
 ### Alternatively: 
 
 ```go 
-r := zlib.NewReader(nil)         // requires no reader if ReadBytes is used
-defer r.Close()                  // always close or bad things will happen
-dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []byte 
+r := zlib.NewReader(nil)                 // requires no reader if ReadBuffer is used
+defer r.Close()                          // always close or bad things will happen
+_, dc, _ := r.ReadBytes(compressed, nil) // decompresses input & returns decompressed []byte 
 ```
 
 # Notes
@@ -133,15 +130,20 @@ dc, _ := r.ReadBytes(compressed) // decompresses input & returns decompressed []
 
 - **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memory leakage.
 
-- **`HuffmanOnly` does NOT work as with the standard library**. This is the only exception from the philosophy to make this library interchangeable with the standard library. If you want to use 
+- **`HuffmanOnly` does NOT work as with the standard library**. If you want to use 
 `HuffmanOnly`, refer to the `NewWriterLevelStrategy()` constructor function. However, your existing code won't break by leaving `HuffmanOnly` as argument to `NewWriterLevel()`, it will just use the default compression strategy and compression level 2.  
 
 - Memory Usage: `Compressing` requires ~256 KiB of additional memory during execution, while `Decompressing` requires ~39 KiB of additional memory during execution. 
 So if you have 8 simultaneous `WriteBytes` working from 8 Writers across 8 threads, your memory footprint from that alone will be about ~2MiByte.
 
-- You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. The contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times, you do not need to close them until you are completely done with them (perhaps only at the very end of your program).  
+- You are strongly encouraged to use the same Reader / Writer for multiple Decompressions / Compressions as it is not required nor beneficial in any way, shape or form to create a new one every time. The contrary is true: It is more performant to reuse a reader/writer. Of course, if you use the same reader/writer multiple times, you do not need to close them until you are completely done with them (perhaps only at the very end of your program). 
+
+- A `Reader` can be created with an empty underlying reader, unlike with the standard library. I decided to diverge from the standard behavior there,
+because I thought it was too cumbersome.  
 
 # Benchmarks
+
+(These are benchmarks for v1.x; I will update these benchmarks asap, but v2.x introduced considerable performance improvements for Read-OPs.)
 
 These benchmarks were conducted with "real-life-type data" to ensure that these tests are most representative for an actual use case in a practical production environment.
 As the zlib standard has been traditionally used for compressing smaller chunks of data, I have decided to follow suite by opting for Minecraft client-server communication packets, as they represent the optimal use case for this library. 
