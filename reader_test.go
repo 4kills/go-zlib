@@ -9,16 +9,37 @@ import (
 
 // UNIT TESTS
 
+func TestReadBytes(t *testing.T) {
+	b := &bytes.Buffer{}
+	w := zlib.NewWriter(b)
+	w.Write(longString)
+	w.Close()
+
+	r, err := NewReader(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	defer r.Close()
+
+	_, act, err := r.ReadBytes(b.Bytes())
+	if err != nil {
+		t.Error(err)
+	}
+
+	sliceEquals(t, longString, act)
+}
+
 func TestRead_SufficientBuffer(t *testing.T) {
 	b := &bytes.Buffer{}
 	out := &bytes.Buffer{}
 	w := zlib.NewWriter(b)
 
-	r, err := zlib.NewReader(b)
+	r, err := NewReader(b)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
+	defer r.Close()
 
 	read := func() {
 		p := make([]byte, 1e+4)
