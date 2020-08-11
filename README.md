@@ -12,6 +12,8 @@ This library is designed to be completely and easily interchangeable with the go
 
 This library also offers *blazing fast convenience methods* that can be used as a clean, alternative interface to that provided by the go standard library. (See [usage](#usage)).
 
+If you are after compressing whole-buffered data, you might also want to check out [this](https://github.com/4kills/go-libdeflate) library here. 
+
 ## Table of Contents
 
 - [Features](#features)
