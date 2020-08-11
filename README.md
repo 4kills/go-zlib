@@ -61,7 +61,7 @@ off of MinGW. Please note that [cgo](https://golang.org/cmd/cgo/) requires the 6
 To get the most recent stable version just type: 
 
 ```shell script 
-$ go get github.com/4kills/zlib
+$ go get github.com/4kills/go-zlib
 ```
 
 You may also use go modules (available since go 1.11) to get the version of a specific branch or tag if you want to try out or use experimental features. However, beware that these versions are not necessarily guaranteed to be stable or thoroughly tested.
@@ -77,7 +77,7 @@ Just remove:
 and use instead: 
  
 ```go
-import "github.com/4kills/zlib"
+import "github.com/4kills/go-zlib"
 ```
 
 If there are any problems with your existing code after this step, please let me know. 
