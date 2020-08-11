@@ -1,3 +1,3 @@
-module github.com/4kills/zlib
+module github.com/4kills/go-zlib
 
-go 1.14
+go 1.13
