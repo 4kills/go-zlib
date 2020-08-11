@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/4kills/zlib/native"
+	"github.com/4kills/go-zlib/native"
 )
 
 // Reader decompresses data from an underlying io.Reader or via the ReadBuffer method, which should be preferred
