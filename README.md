@@ -4,13 +4,13 @@
 <img src="https://img.shields.io/badge/license-zlibLicense-blue.svg" alt="License: zlibLicense">
 </a>
 
-This ultra fast **go zlib library** wraps the original zlib library written in C by Jean-loup Gailly and Mark Adler using cgo. 
+This ultra fast **Go zlib library** wraps the original zlib library written in C by Jean-loup Gailly and Mark Adler using cgo. 
 
-**It offers considerable performance benefits compared to the standard go zlib library**, as the [benchmarks](#benchmarks) show.
+**It offers considerable performance benefits compared to the standard Go zlib library**, as the [benchmarks](#benchmarks) show.
 
-This library is designed to be completely and easily interchangeable with the go standard zlib library. *You won't have to rewrite or modify a single line of code!* Checking if this library works for you is as easy as changing [imports](#import)!
+This library is designed to be completely and easily interchangeable with the Go standard zlib library. *You won't have to rewrite or modify a single line of code!* Checking if this library works for you is as easy as changing [imports](#import)!
 
-This library also offers *blazing fast convenience methods* that can be used as a clean, alternative interface to that provided by the go standard library. (See [usage](#usage)).
+This library also offers *blazing fast convenience methods* that can be used as a clean, alternative interface to that provided by the Go standard library. (See [usage](#usage)).
 
 If you are after compressing whole-buffered data, you might also want to check out [this](https://github.com/4kills/go-libdeflate) library here. 
 
@@ -35,9 +35,9 @@ If you are after compressing whole-buffered data, you might also want to check o
 
 - [x] zlib compression / decompression
 - [x] A variety of different `compression strategies` and `compression levels` to choose from 
-- [x] Seamless interchangeability with the go standard zlib library 
+- [x] Seamless interchangeability with the Go standard zlib library 
 - [x] Alternative, super fast convenience methods for compression / decompression
-- [x] Benchmarks with comparisons to the go standard zlib library
+- [x] Benchmarks with comparisons to the Go standard zlib library
 - [ ] Custom, user-defined dictionaries
 - [ ] More customizable memory management 
 - [x] Support streaming of data to compress/decompress data. 
@@ -46,7 +46,7 @@ If you are after compressing whole-buffered data, you might also want to check o
 
 ## Prerequisites 
 
-In order to use this library with your go source code, you must be able to use the go tool [cgo](https://golang.org/cmd/cgo/), which in turn requires a GCC compiler.
+In order to use this library with your Go source code, you must be able to use the Go tool [cgo](https://golang.org/cmd/cgo/), which in turn requires a GCC compiler.
 
 If you are on **Linux**, there is a good chance you already have GCC installed, otherwise just get it with your favorite package manager.
 
@@ -64,11 +64,11 @@ To get the most recent stable version just type:
 $ go get github.com/4kills/go-zlib
 ```
 
-You may also use go modules (available since go 1.11) to get the version of a specific branch or tag if you want to try out or use experimental features. However, beware that these versions are not necessarily guaranteed to be stable or thoroughly tested.
+You may also use Go modules (available since Go 1.11) to get the version of a specific branch or tag if you want to try out or use experimental features. However, beware that these versions are not necessarily guaranteed to be stable or thoroughly tested.
 
 ## Import
 
-This library is designed in a way to make it easy to swap it out for the go standard zlib library. Therefore, you should only need to change imports and not a single line of your written code. 
+This library is designed in a way to make it easy to swap it out for the Go standard zlib library. Therefore, you should only need to change imports and not a single line of your written code. 
 
 Just remove: 
 
@@ -130,7 +130,7 @@ _, dc, _ := r.ReadBytes(compressed, nil) // decompresses input & returns decompr
 
 - **Do NOT use the <ins>same</ins> Reader / Writer across multiple threads <ins>simultaneously</ins>.** You can do that if you **sync** the read/write operations, but you could also create as many readers/writers as you like - for each thread one, so to speak. This library is generally considered thread-safe.
 
-- **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memory leakage.
+- **Always `Close()` your Reader / Writer when you are done with it** - especially if you create a new reader/writer for each decompression/compression you undertake (which is generally discouraged anyway). As the C-part of this library is not subject to the Go garbage collector, the memory allocated by it must be released manually (by a call to `Close()`) to avoid memory leakage.
 
 - **`HuffmanOnly` does NOT work as with the standard library**. If you want to use 
 `HuffmanOnly`, refer to the `NewWriterLevelStrategy()` constructor function. However, your existing code won't break by leaving `HuffmanOnly` as argument to `NewWriterLevel()`, it will just use the default compression strategy and compression level 2.  
@@ -153,7 +153,7 @@ These packets represent actual client-server communication and were recorded usi
 
 The benchmarks were executed on different hardware and operating systems, including AMD and Intel processors, as well as all the supported operating systems (Windows, Linux, MacOS). All the benchmarked functions/methods were executed hundreds of times, and the numbers you are about to see are the averages over all these executions.
 
-These benchmarks compare this library (blue) to the go standard library (yellow) and show that this library performs better in all cases. 
+These benchmarks compare this library (blue) to the Go standard library (yellow) and show that this library performs better in all cases. 
 
 - <details>
   
