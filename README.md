@@ -123,7 +123,7 @@ io.Copy(os.Stdout, r)            // read all the decompressed data and write it 
 ```go 
 r := zlib.NewReader(nil)                 // requires no reader if ReadBuffer is used
 defer r.Close()                          // always close or bad things will happen
-_, dc, _ := r.ReadBytes(compressed, nil) // decompresses input & returns decompressed []byte 
+_, dc, _ := r.ReadBuffer(compressed, nil) // decompresses input & returns decompressed []byte 
 ```
 
 # Notes
