@@ -83,7 +83,7 @@ func (zw *Writer) WriteBuffer(in, out []byte) ([]byte, error) {
 	}
 
 	if out == nil {
-		return zw.compressor.Compress(in, make([]byte, len(in)))
+		return zw.compressor.Compress(in, make([]byte, len(in)+16))
 	}
 
 	return zw.compressor.Compress(in, out)

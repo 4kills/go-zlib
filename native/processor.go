@@ -83,7 +83,7 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 	}
 
 	if condition == nil {
-		condition = func() bool {return false}
+		condition = func() bool { return false }
 	}
 	for condition() {
 		if err := run(); err != nil {
