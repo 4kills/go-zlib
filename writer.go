@@ -63,9 +63,7 @@ func NewWriterLevelStrategy(w io.Writer, level, strategy int) (*Writer, error) {
 	if strategy < minStrategy || strategy > maxStrategy {
 		return nil, errInvalidStrategy
 	}
-
 	c, err := native.NewCompressorStrategy(level, strategy)
-
 	return &Writer{w, level, strategy, c}, err
 }
 
@@ -83,7 +81,11 @@ func (zw *Writer) WriteBuffer(in, out []byte) ([]byte, error) {
 	}
 
 	if out == nil {
-		return zw.compressor.Compress(in, make([]byte, len(in)+16))
+		ans, err := zw.compressor.Compress(in, make([]byte, len(in)))
+		if err != nil {
+			return nil, err
+		}
+		return ans, nil
 	}
 
 	return zw.compressor.Compress(in, out)
