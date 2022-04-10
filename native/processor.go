@@ -13,10 +13,13 @@ type processor struct {
 	hasCompleted bool
 	readable     int
 	isClosed     bool
+
+	lastIn  int
+	lastOut int
 }
 
 func newProcessor() processor {
-	return processor{C.newStream(), false, 0, false}
+	return processor{s: C.newStream(), hasCompleted: false, readable: 0, isClosed: false, lastIn: -1, lastOut: -1}
 }
 
 func (p *processor) prepare(inPtr uintptr, inSize int, outPtr uintptr, outSize int) {

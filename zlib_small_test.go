@@ -2,7 +2,6 @@ package zlib
 
 import (
 	"bytes"
-	"log"
 	"testing"
 )
 
@@ -16,7 +15,6 @@ func TestWriteBytes_ReadBytes_wTinyString(t *testing.T) {
 }
 func TestWriteBytes_ReadBytes_wShorterString(t *testing.T) {
 	b := testWriteBytes(shorterString, t)
-	log.Println(b)
 	out := testReadBytes(bytes.NewBuffer(b), t)
 	sliceEquals(t, shorterString, out)
 }

@@ -81,7 +81,7 @@ func (zw *Writer) WriteBuffer(in, out []byte) ([]byte, error) {
 	}
 
 	if out == nil {
-		ans, err := zw.compressor.Compress(in, make([]byte, len(in)))
+		ans, err := zw.compressor.Compress(in, make([]byte, len(in)+16))
 		if err != nil {
 			return nil, err
 		}
