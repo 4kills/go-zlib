@@ -4,15 +4,17 @@
 <img src="https://img.shields.io/badge/license-zlibLicense-blue.svg" alt="License: zlibLicense">
 </a>
 
+```diff
+- For whole buffered data (i.e. it fits into your RAM) https://github.com/4kills/go-libdeflate is much faster and completely compatible with zlib!
+```
+
 This ultra fast **Go zlib library** wraps the original zlib library written in C by Jean-loup Gailly and Mark Adler using cgo. 
 
 **It offers considerable performance benefits compared to the standard Go zlib library**, as the [benchmarks](#benchmarks) show.
 
 This library is designed to be completely and easily interchangeable with the Go standard zlib library. *You won't have to rewrite or modify a single line of code!* Checking if this library works for you is as easy as changing [imports](#import)!
 
-This library also offers *blazing fast convenience methods* that can be used as a clean, alternative interface to that provided by the Go standard library. (See [usage](#usage)).
-
-If you are after compressing whole-buffered data, you might also want to check out [this](https://github.com/4kills/go-libdeflate) library here. 
+This library also offers *fast convenience methods* that can be used as a clean, alternative interface to that provided by the Go standard library. (See [usage](#usage)).
 
 ## Table of Contents
 
