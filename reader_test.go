@@ -21,7 +21,7 @@ func TestReadBytes(t *testing.T) {
 	}
 	defer r.Close()
 
-	_, act, err := r.ReadBuffer(b.Bytes(),nil)
+	_, act, err := r.ReadBuffer(b.Bytes(), nil)
 	if err != nil {
 		t.Error(err)
 	}

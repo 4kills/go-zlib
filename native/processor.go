@@ -16,7 +16,7 @@ type processor struct {
 }
 
 func newProcessor() processor {
-	return processor{C.newStream(), false, 0, false}
+	return processor{s: C.newStream(), hasCompleted: false, readable: 0, isClosed: false}
 }
 
 func (p *processor) prepare(inPtr uintptr, inSize int, outPtr uintptr, outSize int) {
@@ -83,7 +83,7 @@ func (p *processor) process(in []byte, buf []byte, condition func() bool, zlibPr
 	}
 
 	if condition == nil {
-		condition = func() bool {return false}
+		condition = func() bool { return false }
 	}
 	for condition() {
 		if err := run(); err != nil {

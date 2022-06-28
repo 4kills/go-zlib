@@ -159,7 +159,7 @@ func testWriteReadBytesRepeated(input []byte, t *testing.T) {
 	out := bytes.NewBuffer(make([]byte, 0, len(rep)))
 	m := b.Len()
 	for i := 0; i < repeatCount; i++ {
-		_, decomp, err := r.ReadBuffer(b.Next(m / repeatCount), nil)
+		_, decomp, err := r.ReadBuffer(b.Next(m/repeatCount), nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -215,7 +215,7 @@ func testWriteReadRepeated(input []byte, t *testing.T) {
 		var err error
 		i := 0
 		for err != io.EOF {
-			stream.Write(b.Bytes()[i*b.Len()/repeatCount : (i+1) *b.Len()/repeatCount])
+			stream.Write(b.Bytes()[i*b.Len()/repeatCount : (i+1)*b.Len()/repeatCount])
 			n := 0
 			n, err = r.Read(o)
 			out.Write(o[:n])
@@ -257,7 +257,7 @@ func testWriteBytes(input []byte, t *testing.T) []byte {
 	w := NewWriter(nil)
 	defer w.Close()
 
-	b, err := w.WriteBuffer(input, make([]byte, len(input)))
+	b, err := w.WriteBuffer(input, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -270,7 +270,6 @@ func testReadBytes(b *bytes.Buffer, t *testing.T) []byte {
 		t.Error(err)
 	}
 	defer r.Close()
-
 	_, out, err := r.ReadBuffer(b.Bytes(), nil)
 	if err != nil {
 		t.Error(err)
