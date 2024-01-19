@@ -29,7 +29,7 @@ func TestReadBytes(t *testing.T) {
 	sliceEquals(t, longString, act)
 }
 
-func TestRead_SufficientBuffer(t *testing.T) {
+func initTestRead(t *testing.T, bufferSize int) (*bytes.Buffer, *zlib.Writer, *Reader, func(r *Reader) error) {
 	b := &bytes.Buffer{}
 	out := &bytes.Buffer{}
 	w := zlib.NewWriter(b)
@@ -39,27 +39,53 @@ func TestRead_SufficientBuffer(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
-	defer r.Close()
 
-	read := func() {
-		p := make([]byte, 1e+4)
+	read := func(r *Reader) error {
+		p := make([]byte, bufferSize)
 		n, err := r.Read(p)
 		if err != nil && err != io.EOF {
 			t.Error(err)
 			t.Error(n)
+			t.FailNow()
 		}
 		out.Write(p[:n])
+		return err // io.EOF or nil
 	}
 
-	_, err = w.Write(shortString)
+	return out, w, r, read
+}
+
+func TestRead_SufficientBuffer(t *testing.T) {
+	out, w, r, read := initTestRead(t, 1e+4)
+	defer r.Close()
+
+	w.Write(shortString)
 	w.Flush()
 
-	read()
+	read(r)
 
-	_, err = w.Write(shortString)
+	w.Write(shortString)
 	w.Close()
 
-	read()
+	read(r)
+
+	sliceEquals(t, append(shortString, shortString...), out.Bytes())
+}
+
+func TestRead_SmallBuffer(t *testing.T) {
+	out, w, r, read := initTestRead(t, 1)
+	defer r.Close()
+
+	w.Write(shortString)
+	w.Write(shortString)
+	w.Close()
+
+	for {
+		err := read(r)
+		if err == io.EOF {
+			break
+		}
+	}
 
 	sliceEquals(t, append(shortString, shortString...), out.Bytes())
 }

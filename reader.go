@@ -60,18 +60,7 @@ func (r *Reader) Read(p []byte) (int, error) {
 	}
 
 	if r.outBuffer.Len() != 0 {
-		min := len(p)
-		if len(p) < r.outBuffer.Len() {
-			min = r.outBuffer.Len()
-		}
-		copy(p, r.outBuffer.Bytes()[:min])
-		r.outBuffer.Next(min)
-
-		var err error
-		if r.outBuffer.Len() == 0 && r.eof {
-			err = io.EOF
-		}
-		return min, err
+		return r.outBuffer.Read(p)
 	}
 
 	n, err := r.r.Read(p)
@@ -87,7 +76,7 @@ func (r *Reader) Read(p []byte) (int, error) {
 	}
 	r.inBuffer.Next(processed)
 
-	if r.eof && len(out) <= len(p){
+	if r.eof && len(out) <= len(p) {
 		copy(p, out)
 		return len(out), io.EOF
 	}
