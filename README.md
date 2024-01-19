@@ -24,9 +24,9 @@ This library also offers *fast convenience methods* that can be used as a clean,
 
 - [Features](#features)
 - [Installation](#installation)
-  - [Prerequisites](#prerequisites)
+  - [Install cgo](#install-cgo)
+  - [Install pkg-config and zlib](#install-pkg-config-and-zlib)
   - [Download](#download)
-  - [Installation for a particular OS and Architecture](#installation-for-a-particular-os-and-architecture)
   - [Import](#import)
 - [Usage](#usage)
   - [Compress](#compress)
@@ -49,78 +49,57 @@ This library also offers *fast convenience methods* that can be used as a clean,
 - [ ] More customizable memory management 
 - [x] Support streaming of data to compress/decompress data. 
 - [x] Out-of-the-box support for amd64 Linux, Windows, MacOS
-- [x] Support for custom built architecture/os combinations (see [Installation for a particular OS and Architecture](#installation-for-a-particular-os-and-architecture))
+- [x] Support for most common architecture/os combinations (see [Installation for a particular OS and Architecture](#installation-for-a-particular-os-and-architecture))
+
 
 # Installation
 
-## Prerequisites 
+For the library to work, you need cgo, zlib (which is used by this library under the hood), and pkg-config (linker):
 
-In order to use this library with your Go source code, you must be able to use the Go tool [cgo](https://golang.org/cmd/cgo/), which in turn requires a GCC compiler.
+## Install [cgo](https://golang.org/cmd/cgo/)
+
+**TL;DR**: Get **[cgo](https://golang.org/cmd/cgo/)** working.
+
+In order to use this library with your Go source code, you must be able to use the Go tool **[cgo](https://golang.org/cmd/cgo/)**, which, in turn, requires a **GCC compiler**.
 
 If you are on **Linux**, there is a good chance you already have GCC installed, otherwise just get it with your favorite package manager.
 
 If you are on **MacOS**, Xcode - for instance - supplies the required tools.
 
-If you are on **Windows**, you will need to install a GNU environment.
+If you are on **Windows**, you will need to install GCC.
 I can recommend [tdm-gcc](https://jmeubank.github.io/tdm-gcc/) which is based
 off of MinGW. Please note that [cgo](https://golang.org/cmd/cgo/) requires the 64-bit version (as stated [here](https://github.com/golang/go/wiki/cgo#windows)). 
 
+For **any other** the procedure should be about the same. Just google. 
+
+## Install [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) and [zlib](https://www.zlib.net/)
+
+This SDK uses [zlib](https://www.zlib.net/) under the hood. For the SDK to work, you need to install `zlib` on your system which is super easy! 
+Additionally we require [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) which facilitates linking `zlib` with this (cgo) SDK. 
+How exactly you install these two packages depends on your operating system.
+
+#### MacOS (HomeBrew):
+```sh
+brew install zlib
+brew install pkg-config
+```
+
+#### Linux:
+Use the package manager available on your distro to install the required packages. 
+
+#### Windows (MinGW/WSL2):
+Here, you can either use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install)
+or [MinGW](https://www.mingw-w64.org/) and from there install the required packages. 
+
 ## Download
 
-To get the most recent stable version just type: 
+To get the most recent stable version of this library just type: 
 
 ```shell script 
 $ go get github.com/4kills/go-zlib
 ```
 
 You may also use Go modules (available since Go 1.11) to get the version of a specific branch or tag if you want to try out or use experimental features. However, beware that these versions are not necessarily guaranteed to be stable or thoroughly tested.
-
-## Installation for a particular OS and Architecture
-
-If you want to build for `$GOARCH=amd64` and either **Windows, Linux** or **MacOS** just `go get` this library and everything will work right away. 
-
-<details>
-
-<summary> Instructions for building for different GOOS,GOARCH </summary>  
-
-
-A list of possible GOOS,GOARCH combinations can be viewed [here](https://golang.org/doc/install/source#environment). 
-
-**Instructions:**
-
-1. You will need to compile and build the C [zlib](https://github.com/madler/zlib) library for your target system by cloning the [repository](https://github.com/madler/zlib) and executing the Makefile (specifying the build). *You should always use GCC for compilation as this produces the fastest libraries.* 
-
-2. Step 1 will yield compiled library files. You are going to want to use the static library (usually ending with .a \[in case of windows, rename .lib to .a\]), give it an adequate name (like `GOOS_GOARCHlibz.a`) and copy it to the native/libs folder of this library.
-
-3. Go to the `native/cgo.go` file, which should roughly look like this: 
-```go
-package native
-
-/*
-#cgo CFLAGS: -I${SRCDIR}/zlib/
-#cgo windows LDFLAGS: ${SRCDIR}/libs/winlibz.a
-#cgo linux LDFLAGS: ${SRCDIR}/libs/linuxlibz.a
-#cgo darwin LDFLAGS: ${SRCDIR}/libs/darwinlibz.a
-*/
-import "C"
-```
-Now you want to add your build of zlib to the cgo directives, more specifically, to the linker flags, like this (omit the '+'): 
-```diff
-package native
-
-/*
-#cgo CFLAGS: -I${SRCDIR}/zlib/
-+#cgo GOOS,GOARCH LDFLAGS: ${SRCDIR}/libs/GOOS_GOARCHlibz.a
-#cgo windows LDFLAGS: ${SRCDIR}/libs/winlibz.a
-#cgo linux LDFLAGS: ${SRCDIR}/libs/linuxlibz.a
-#cgo darwin LDFLAGS: ${SRCDIR}/libs/darwinlibz.a
-*/
-import "C"
-```
-
-That's it! It should work now! And by the way, if you have built the library for a certain GOOS,GOARCH combination, you are welcome to make a pull request!
-
-</details>
 
 ## Import
 

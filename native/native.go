@@ -1,7 +1,7 @@
 package native
 
 /*
-#include "zlib/zlib.h"
+#include "zlib.h"
 */
 import "C"
 import "fmt"
