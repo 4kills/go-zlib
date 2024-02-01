@@ -4,13 +4,12 @@
 <img src="https://img.shields.io/badge/license-zlibLicense-blue.svg" alt="License: zlibLicense">
 </a>
 
-```diff
-- For whole buffered data (i.e. it fits into memory) use https://github.com/4kills/go-libdeflate !
-```
-[4kills/go-libdeflate](https://github.com/4kills/go-libdeflate) is much **faster** (at least 3 times) and completely **compatible with zlib**!  
-With that said, if you need to stream large data from disk, you may continue with this library.
+> [!IMPORTANT]  
+> For whole buffered data (i.e. it fits into memory) use [4kills/go-libdeflate](https://github.com/4kills/go-libdeflate)!  
+> [4kills/go-libdeflate](https://github.com/4kills/go-libdeflate) is much **faster** (at least 3 times) and completely **compatible with zlib**!  
+> With that said, if you need to stream large data from disk, you may continue with this (go-zlib) library.
 
---- 
+
 
 This ultra fast **Go zlib library** wraps the original zlib library written in C by Jean-loup Gailly and Mark Adler using cgo. 
 
